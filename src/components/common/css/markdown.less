@@ -1,0 +1,117 @@
+.markdown-css {
+    width: calc(100% - 80px);
+    padding: 20px 40px;
+
+    // common
+    div, span, object, iframe,
+    h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+    abbr, address, cite, code,
+    del, dfn, em, img, ins, kbd, q, samp,
+    small, strong, sub, sup, var,
+    b, i,
+    dl, dt, dd, ol, ul, li,
+    fieldset, form, label, legend,
+    table, caption, tbody, tfoot, thead, tr, th, td,
+    article, aside, canvas, details, figcaption, figure,
+    footer, header, hgroup, menu, nav, section, summary,
+    time, mark, audio, video {
+        //color: #000;
+        // 抗锯齿渲染
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;
+
+        letter-spacing: 0.1px;
+    }
+
+    * {
+        color: #333;
+    }
+
+    h1, h2, h3, h4, h5, h6 {margin: 20px 0px 5px 0px;font-weight: 500;color:#333}
+
+    h1 {font-size: 35px}
+    h2 {font-size: 30px}
+    h3 {font-size: 22px}
+    h4 {font-size: 20px}
+    h5 {font-size: 15px}
+    h6 {font-size: 10px}
+    p {font-size: 16px; line-height: 24px}
+
+    h3:before {
+        content: "#";
+        color: #eb5055;
+        font-weight: 600;
+        margin: 0 10px 0 -18px
+    }
+
+    pre {
+        //background-color: red;
+        code {
+            width: 70%;
+            //max-width: 100%;
+            overflow-x: auto;
+            background-color: #FFFAF1;
+            border: 1px #FFEFD8 solid;
+            display: inline-block;
+            font-size: 14px;
+            line-height: 20px;
+            padding: 25px 30px;
+            margin: 15px;
+            //letter-spacing:1pt;
+
+        }
+    }
+    p {
+        code {
+            display: inline-block;
+            font-size: 14px;
+            line-height: 18px;
+            padding: 0px 7px;
+            border: 1px #FFEFD8 solid;
+            background-color: #FFFAF1;
+            font-style:oblique;
+            color: #405023;
+            //margin: 15px;
+        }
+    }
+
+    ul {
+        margin: 15px;
+        li {
+            margin: 0px 0px 0px 10px;
+            //background-color: red;
+            font-size: 15px;
+            line-height: 24px;
+            list-style-type: square;
+        }
+    }
+
+    table {
+        font-size: 15px;
+        line-height: 20px;
+        margin: 10px;
+        th {
+            text-align: left;
+        }
+        td {
+            margin: 0px 15px;
+            line-height: 25px;
+        }
+        th,td {
+            border: 1px #DFE2E5 solid;
+            padding: 5px 10px;
+        }
+        tr:nth-child(even) {
+            background-color: #fff;
+        }
+        tr:nth-child(odd) {
+            background-color: #F6F8FA;
+        }
+    }
+
+    a:link {color:#6495ED;}    /* unvisited link */
+    a:visited {color:#6495ED;} /* visited link */
+    a:active {color:#6495ED;}  /* selected link */
+
+}
