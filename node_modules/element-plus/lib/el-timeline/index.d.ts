@@ -1,2 +1,0 @@
-import Timeline from './src/index.vue';
-export default Timeline;
