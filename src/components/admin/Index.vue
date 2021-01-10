@@ -12,8 +12,11 @@
                      :to="item.path"
                      :class="{'nav-item-active':route.name == item.name ,'nav-item-quiet': route.name != item.name}">
           <embed :src="'/public/static/img/icon/' + item.meta.icon"
+                 type="image/svg+xml"
                  @click="setRouterTitle(item.name)"
+                 @load="imgLoad"
                  class="nav-icon"
+                 :id="item.meta.icon"
                  :class="
                            [
                                 {'nav-icon-left':sider},
@@ -46,7 +49,7 @@
 
 <script>
   import {useRoute, useRouter} from 'vue-router'
-  import {reactive, toRefs, computed} from 'vue'
+  import {reactive, toRefs, computed, onMounted, watchEffect} from 'vue'
   import {useStore} from 'vuex'
 
   export default {
@@ -74,8 +77,42 @@
         store.commit('setRouteTitle', title)
       }
 
+      // 修改图标选中状态
+      const iconSwitch = (id) => {
+        const embedEle = document.getElementById("em")
+        const svg = embedEle.getSVGDocument()
+        const svgdoc = svg.documentElement
+        console.log(svgdoc)
+        svgdoc.setAttribute("style", "fill:#fff;")
+      }
+
+      // icon
+
+
+      const imgLoad = () => {
+        const embedEle = document.getElementById(route.meta.icon)
+        const svg = embedEle.getSVGDocument()
+        if (svg) {
+          const svgdoc = svg.documentElement
+          svgdoc.setAttribute("style", "fill:#fff;")
+        }
+      }
+
+      onMounted(() => {
+
+        watchEffect(() => {
+          const embedEle = document.getElementById(route.meta.icon)
+          const svg = embedEle.getSVGDocument()
+          if (svg) {
+            const svgdoc = svg.documentElement
+            svgdoc.setAttribute("style", "fill:#fff;")
+          }
+
+        })
+      })
+
       return {
-        fun,
+        fun, imgLoad,
         route,
         router,
         sider,
@@ -88,6 +125,9 @@
 <style scoped lang="less">
   @layout-header-height: 90px;
 
+  .ttst {
+    fill: #fff;
+  }
 
   #AdminIndex {
     background-color: #F0F2F5;

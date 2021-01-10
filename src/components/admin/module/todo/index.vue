@@ -141,7 +141,7 @@
       const delTodo = (item, index) => {
         const data = {
           id: item.id,
-          everydayId: item.everyday_id
+          everydayId: item.everydayId
         }
         http('get', '/todo/delTodo', {...data}).then(res => {
           if (res.code == 200) {

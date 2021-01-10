@@ -1,18 +1,12 @@
-const fs = require('fs')
-const path = require('path')
 const router = require('koa-router')(); //注意：引入的方式
 const articleController = require('../controllers/article')
 
-// router.use('/news', async (ctx, next) => {
-//     console.log('我是article中间件')
-//     await next()
-// })
 // 当前页面可写中间件
 router.get('/articleList', async (ctx, next) => {
     await next()
   },
   async ctx => {
-    let data = await articleController.articleList()
+    let data = await articleController.articleList(ctx.request.query.page, 15)
     ctx.send(200, data)
   })
 

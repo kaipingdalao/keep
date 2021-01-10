@@ -33,6 +33,7 @@ router.get('/addTodo', async ctx => {
   !!data['insertId'] ? ctx.send(200, {newTodoId: data['insertId']}) : ctx.send(400)
 })
 router.get('/delTodo', async ctx => {
+  console.log(ctx.request.query.id, ctx.request.query.everydayId)
   const id = Number(ctx.request.query.id),
     everydayId = ctx.request.query.everydayId ? ctx.request.query.everydayId : false,
     data = await todoController.delTodo(id, everydayId)

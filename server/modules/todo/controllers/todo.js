@@ -45,7 +45,6 @@ module.exports = {
     return type == 'once' ? await add(title, date) : await addEveryDayTodo(title, date)
   },
   delTodo: async (id, everydayId) => {
-    everydayId && await delEverydayTodo(everydayId)
-    return await del(id)
+    return everydayId && await delEverydayTodo(everydayId) || id && await del(id)
   }
 }

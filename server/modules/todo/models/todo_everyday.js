@@ -7,17 +7,17 @@ const mysql = () => {
 
 module.exports = {
   getEveryDayTodoList: async timestampStart => {
-    return mysql().where('end_time=0', `start_time < ${timestampStart}`).select()
+    return mysql().where('end_date=0', `start_date < ${timestampStart}`).select()
   },
 
   addEveryDayTodo: async (title, date) => {
-    const result = await mysql().fields('title', 'start_time', 'end_time')
+    const result = await mysql().fields('title', 'start_date', 'end_date')
       .insert([title, date, 0])
       .execute()
     return result.affectedRows == 1 ? result : false
   },
   delEverydayTodo: async id => {
-    return await mysql().fields('end_time')
+    return await mysql().fields('end_date')
       .update(parseInt(new Date().getTime() / 1000))
       .where(`id=${id}`)
       .execute()

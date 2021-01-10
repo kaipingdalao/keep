@@ -3,8 +3,8 @@ const {getCategoryList} = require('../models/category')
 
 module.exports = {
 
-  articleList: async () => {
-    return await getArticleList(1, 10)
+  articleList: async (page, pagesize) => {
+    return await getArticleList(page, pagesize)
   },
 
   article: async id => {
