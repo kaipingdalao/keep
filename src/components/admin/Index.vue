@@ -3,7 +3,7 @@
     <div class="layout-sider" :class="{'layout-sider-active': sider, 'layout-sider-quiet': !sider}">
       <div class="app-logo">
         <div>
-          <input/>
+          <span>Keep</span>
         </div>
       </div>
       <ul class="nav">
@@ -14,9 +14,9 @@
           <embed :src="'/public/static/img/icon/' + item.meta.icon"
                  type="image/svg+xml"
                  @click="setRouterTitle(item.name)"
-                 @load="imgLoad"
+                 @load="imgLoad(item.meta.icon.split('.')[0])"
                  class="nav-icon"
-                 :id="item.meta.icon"
+                 :id="item.meta.icon.split('.')[0]"
                  :class="
                            [
                                 {'nav-icon-left':sider},
@@ -49,7 +49,7 @@
 
 <script>
   import {useRoute, useRouter} from 'vue-router'
-  import {reactive, toRefs, computed, onMounted, watchEffect} from 'vue'
+  import {reactive, toRefs, computed, onMounted, watchEffect, watch} from 'vue'
   import {useStore} from 'vuex'
 
   export default {
@@ -78,45 +78,44 @@
       }
 
       // 修改图标选中状态
-      const iconSwitch = (id) => {
-        const embedEle = document.getElementById("em")
-        const svg = embedEle.getSVGDocument()
-        const svgdoc = svg.documentElement
-        console.log(svgdoc)
-        svgdoc.setAttribute("style", "fill:#fff;")
+      const iconSwitch = (id, state) => {
+        const embedEle = document.getElementById(id),
+          svg = embedEle.getSVGDocument(),
+          svgdoc = svg.documentElement,
+          fill = state ? `#fff` : `RGB(149,156,162)`
+        svgdoc.setAttribute("style", `fill:${fill};`)
       }
 
       // icon
-
-
-      const imgLoad = () => {
-        const embedEle = document.getElementById(route.meta.icon)
-        const svg = embedEle.getSVGDocument()
-        if (svg) {
-          const svgdoc = svg.documentElement
+      const imgLoad = (id) => {
+        const iconName = route.meta.icon.split('.')[0]
+        if (id == iconName) {
+          const embedEle = document.getElementById(iconName),
+            svg = embedEle.getSVGDocument(),
+            svgdoc = svg.documentElement
           svgdoc.setAttribute("style", "fill:#fff;")
         }
       }
 
       onMounted(() => {
-
-        watchEffect(() => {
-          const embedEle = document.getElementById(route.meta.icon)
-          const svg = embedEle.getSVGDocument()
-          if (svg) {
-            const svgdoc = svg.documentElement
-            svgdoc.setAttribute("style", "fill:#fff;")
+        watch(
+          () => route.meta.icon,
+          (userRecover, prevuserRecover) => {
+            iconSwitch(userRecover.split('.')[0], 1)
+            iconSwitch(prevuserRecover.split('.')[0], 0)
+          },
+          {
+            deep: true
           }
-
-        })
+        )
       })
 
       return {
-        fun, imgLoad,
+        fun,
         route,
         router,
         sider,
-        routeTitle, setRouterTitle
+        routeTitle, setRouterTitle, imgLoad
       }
     }
   }
@@ -150,6 +149,22 @@
         background-color: #334453;
         width: 100%;
         height: 50px;
+        line-height: 50px;
+        text-align: center;
+
+        span {
+          font-size: 22px;
+          color: #ddd;
+          -webkit-font-smoothing: antialiased;
+          /*font-width: 700;*/
+
+          // 禁止选中
+          -moz-user-select:none; /*火狐*/
+          -webkit-user-select:none; /*webkit浏览器*/
+          -ms-user-select:none; /*IE10*/
+          -khtml-user-select:none; /*早期浏览器*/
+          user-select:none;
+        }
       }
     }
 
@@ -206,10 +221,6 @@
       .nav-item:hover .nav-title {
         filter: drop-shadow(#fff 0px 0);
       }
-
-      /*.nav-item:hover .nav-icon {*/
-      /*    filter: drop-shadow(#fff 0px 0);*/
-      /*}*/
 
       .nav-item-active {
         filter: drop-shadow(#fff 0px 0);
