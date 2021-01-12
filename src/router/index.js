@@ -10,6 +10,7 @@ import ArticleContent from '../components/home/article/Content.vue'
 import Log from '../components/home/log/Index.vue'
 // admin
 import AdminLogin from '../components/admin/Login.vue'
+import AdminNav from '../components/admin/Nav.vue'
 import AdminIndex from '../components/admin/Index.vue'
 import ArticleAdd from '../components/admin/module/article/add.vue'
 import ArticleEdit from '../components/admin/module/article/edit.vue'
@@ -53,10 +54,15 @@ const router = createRouter({
     // admin
     {
       path: '/admin',
-      name: 'AdminIndex',
-      component: AdminIndex,
-      meta: {title: "AdminIndex"},
+      name: 'AdminNav',
+      component: AdminNav,
+      meta: {title: "AdminNav"},
+      // 重定向
+      redirect: { name: 'AdminIndex' },
       children: [
+        {
+          path: 'AdminIndex', name: 'AdminIndex', component: AdminIndex, meta: {title: "admin", icon: 'admin_icon.svg'}
+        },
         {
           path: 'ArticleAdd', name: 'ArticleAdd', component: ArticleAdd, meta: {title: "添加文章", icon: 'add_icon.svg'}
         },
