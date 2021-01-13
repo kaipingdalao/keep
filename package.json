@@ -9,6 +9,7 @@
     "@kangc/v-md-editor": "^1.5.3",
     "axios": "^0.21.0",
     "codemirror": "^5.58.2",
+    "echarts": "^5.0.0",
     "element-plus": "^1.0.1-alpha.18",
     "highlight.js": "^10.4.1",
     "koa-route": "^3.2.0",
