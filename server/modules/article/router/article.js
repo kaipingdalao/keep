@@ -38,4 +38,9 @@ router.post('/add', async ctx => {
   const data = await articleController.addArticle(title, content, categoryId, imgName)
   ctx.send(data.affectedRows == 1 ? 200 : 400)
 })
+
+router.get('/catCount', async ctx => {
+  const data = await articleController.categoryArticleCount()
+  ctx.send(200, data)
+})
 module.exports = router

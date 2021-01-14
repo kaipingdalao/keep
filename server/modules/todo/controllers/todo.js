@@ -1,4 +1,4 @@
-const {getList, setState, allDone, add, del, addEveryday} = require('../models/todo')
+const {getList, setState, allDone, add, del, addEveryday, todoSort} = require('../models/todo')
 const {getEveryDayTodoList, addEveryDayTodo, delEverydayTodo} = require('../models/todo_everyday')
 
 module.exports = {
@@ -46,5 +46,8 @@ module.exports = {
   },
   delTodo: async (id, everydayId) => {
     return everydayId && await delEverydayTodo(everydayId) || id && await del(id)
+  },
+  todoDateSort: async (year) => {
+    return await todoSort(year)
   }
 }

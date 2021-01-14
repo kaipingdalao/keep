@@ -54,5 +54,15 @@ module.exports = {
   },
   del: async id => {
     return await mysql().fields('done_state').update(2).where(`id=${id}`).execute()
+  },
+  todoSort: async (year) => {
+    return await mysql().fields('id',
+      'date',
+      'FROM_UNIXTIME( date, "%Y" ) AS y',
+      'FROM_UNIXTIME( date, "%c" ) AS m',
+      'FROM_UNIXTIME( date, "%e" ) AS d')
+      .where(`FROM_UNIXTIME( date, "%Y" ) = ${year}`)
+      .order('date')
+      .select();
   }
 }

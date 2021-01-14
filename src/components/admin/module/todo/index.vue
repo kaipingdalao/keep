@@ -1,7 +1,7 @@
 <template>
   <div id="Log">
     <div class="date-picker">
-      <datePicker :options="calendarArr" @handleClickDay="selectDate"></datePicker>
+      <datePicker :options="calendarArr" :logMarkArr = "logMarkArr" @handleClickDay="selectDate"></datePicker>
     </div>
     <div class="todo-box">
       <div class="add-todo">
@@ -169,6 +169,22 @@
         state.sumUndone = sum
       }
 
+      const logMarkArr = (year) => {
+        let logMarkState = reactive({
+          markArr: {}
+        })
+        http('get', '/log/logDateSort', {year}).then(res => {
+          let data = res.data
+          // 格式化
+          for (let item of data) {
+            let {m, d} = item
+            !(m in logMarkState.markArr) && (logMarkState.markArr[m] = {})
+            logMarkState.markArr[m][d] = true
+          }
+        })
+        return logMarkState.markArr
+      }
+
       onMounted(() => {
         getTodoList()
       })
@@ -183,7 +199,8 @@
         delTodo,
         changeTodoState,
         todayAllDone,
-        selectTodoType
+        selectTodoType,
+        logMarkArr
       }
     }
   }

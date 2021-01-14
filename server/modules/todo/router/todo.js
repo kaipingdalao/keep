@@ -39,5 +39,10 @@ router.get('/delTodo', async ctx => {
     data = await todoController.delTodo(id, everydayId)
   ctx.send(data.affectedRows == 1 ? 200 : 400)
 })
+router.get('/todoDateSort', async ctx => {
+  const year = Number(ctx.request.query.year)
+  let data = await todoController.todoDateSort(year)
+  ctx.send(200, data)
+})
 
 module.exports = router

@@ -1,5 +1,5 @@
 const {getArticleList, getArticle, addArticle} = require('../models/article')
-const {getCategoryList} = require('../models/category')
+const {getCategoryList, categoryArticleCount} = require('../models/category')
 
 module.exports = {
 
@@ -18,6 +18,10 @@ module.exports = {
   addArticle: async (title, content, categoryId, imgName) => {
     const date = parseInt(new Date().getTime() / 1000)
     return await addArticle(title, content, categoryId, date, imgName)
+  },
+
+  categoryArticleCount: async () => {
+    return await categoryArticleCount()
   }
 
 }
