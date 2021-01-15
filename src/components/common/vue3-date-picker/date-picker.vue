@@ -74,7 +74,8 @@
         let weekDay = currentFirstDay.getDay();
         let startTime = currentFirstDay - (weekDay - 1) * 24 * 60 * 60 * 1000;
 
-        let monthDayNum = weekDay == 5 || weekDay == 6 ? 42 : 35
+        // let monthDayNum = weekDay == 5 || weekDay == 6 ? 42 : 35
+        let monthDayNum = weekDay == 6 ? 42 : 35
         for (let i = 0; i < monthDayNum; i++) {
           calendatState.calendatArr.push({
             date: new Date(startTime + i * 24 * 60 * 60 * 1000),

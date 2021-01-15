@@ -62,6 +62,7 @@ module.exports = {
       'FROM_UNIXTIME( date, "%c" ) AS m',
       'FROM_UNIXTIME( date, "%e" ) AS d')
       .where(`FROM_UNIXTIME( date, "%Y" ) = ${year}`)
+      .where('done_state != 2')
       .order('date')
       .select();
   }

@@ -173,7 +173,7 @@
         let logMarkState = reactive({
           markArr: {}
         })
-        http('get', '/log/logDateSort', {year}).then(res => {
+        http('get', '/todo/todoDateSort', {year}).then(res => {
           let data = res.data
           // 格式化
           for (let item of data) {

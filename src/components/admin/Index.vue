@@ -17,7 +17,7 @@
       </ul>
     </div>
     <div class="charts">
-      <div id="categoryChart" style="width: 500px; height: 400px;"></div>
+      <div id="categoryChart" style="width: 900px; height: 400px;"></div>
       <div id="clickChart" style="width: 500px; height: 400px;"></div>
       <div id="summaryChart" style="width: 1200px; height: 500px;"></div>
     </div>
@@ -28,13 +28,23 @@
   import {useRoute, useRouter} from 'vue-router'
   import {reactive, toRefs, computed, onMounted, watchEffect, watch, inject} from 'vue'
   import {useStore} from 'vuex'
+  import http from '/src/lib/http'
 
   export default {
     setup() {
+      const data = reactive({
+        catCountData: [],
+        catTitleArr: [],
+        catDataArr: [],
+        catClickCountArr: []
+      })
+      const {catCountData} = toRefs(data)
+
       const echarts = inject("ec")
 
       const categoryChart = () => {
         let myChart = echarts.init(document.getElementById("categoryChart"));
+
         // 绘制图表
         myChart.setOption({
           title: {
@@ -42,16 +52,16 @@
           },
           tooltip: {},
           legend: {
-            data: ['销量']
+            data: ['数量']
           },
           xAxis: {
-            data: ["衬衫", "羊毛衫", "雪纺衫", "裤子", "高跟鞋", "袜子"]
+            data: data.catTitleArr
           },
           yAxis: {},
           series: [{
-            name: '销量',
+            name: '分类数量',
             type: 'bar',
-            data: [5, 20, 36, 10, 10, 20]
+            data: data.catDataArr
           }]
         });
         window.onresize = function () {//自适应大小
@@ -64,7 +74,7 @@
         // 绘制图表
         myChart.setOption({
           title: {
-            text: '南丁格尔玫瑰图',
+            text: '分类点击统计',
             subtext: '纯属虚构',
             left: 'center'
           },
@@ -75,7 +85,7 @@
           legend: {
             left: 'center',
             top: 'bottom',
-            data: ['rose1', 'rose2', 'rose3', 'rose4', 'rose5', 'rose6', 'rose7', 'rose8']
+            data: data.catTitleArr
           },
           toolbox: {
             show: true,
@@ -92,21 +102,12 @@
           },
           series:
             {
-              name: '面积模式',
+              name: '点击次数',
               type: 'pie',
               radius: [30, 110],
               center: ['50%', '50%'],
               roseType: 'area',
-              data: [
-                {value: 10, name: 'rose1'},
-                {value: 5, name: 'rose2'},
-                {value: 15, name: 'rose3'},
-                {value: 25, name: 'rose4'},
-                {value: 20, name: 'rose5'},
-                {value: 35, name: 'rose6'},
-                {value: 30, name: 'rose7'},
-                {value: 40, name: 'rose8'}
-              ]
+              data: data.catClickCountArr
             }
         });
         window.onresize = function () {//自适应大小
@@ -116,7 +117,7 @@
 
       const summaryChart = () => {
         function getVirtulData(year) {
-          year = year || '2017';
+          year = year || '2021';
           var date = +echarts.number.parseDate(year + '-01-01');
           var end = +echarts.number.parseDate(year + '-12-31');
           var dayTime = 3600 * 24 * 1000;
@@ -124,7 +125,8 @@
           for (var time = date; time <= end; time += dayTime) {
             data.push([
               echarts.format.formatTime('yyyy-MM-dd', time),
-              Math.floor(Math.random() * 10000)
+              // Math.floor(Math.random() * 10000)
+              Math.floor(10 * 10000)
             ]);
           }
           return data;
@@ -152,9 +154,20 @@
         };
       }
       onMounted(() => {//需要获取到element,所以是onMounted的Hook
-        categoryChart()
-        clickChart()
-        summaryChart()
+        http('get', '/article/catCount', ).then(res => {
+          data.catCountData = res.data
+          console.log(res)
+          for (let item of data.catCountData) {
+            data.catTitleArr.push(item.title)
+            data.catDataArr.push(item.count)
+            data.catClickCountArr.push({value: item.click_count, name: item.title})
+          }
+          categoryChart()
+          clickChart()
+          summaryChart()
+        })
+
+
       });
 
 
