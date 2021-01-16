@@ -36,7 +36,8 @@
         catCountData: [],
         catTitleArr: [],
         catDataArr: [],
-        catClickCountArr: []
+        catClickCountArr: [],
+        todoArr: []
       })
       const {catCountData} = toRefs(data)
 
@@ -121,15 +122,25 @@
           var date = +echarts.number.parseDate(year + '-01-01');
           var end = +echarts.number.parseDate(year + '-12-31');
           var dayTime = 3600 * 24 * 1000;
-          var data = [];
+          var dateData = [];
+          // var dateObj = new Date(); dateObj.setTime(1610294400000);
+          // console.log(end)
           for (var time = date; time <= end; time += dayTime) {
-            data.push([
+            dateData.push([
               echarts.format.formatTime('yyyy-MM-dd', time),
               // Math.floor(Math.random() * 10000)
-              Math.floor(10 * 10000)
+              // Math.floor(10 * 10000)
+              Math.floor(0)
             ]);
           }
-          return data;
+          console.log(dateData)
+          for (let item of data.todoArr) {
+            const day = getDays(item.date * 1000)
+            console.log(item.date)
+            console.log(day)
+            dateData[day-1][1] = 100000
+          }
+          return dateData;
         }
 
         let myChart = echarts.init(document.getElementById("summaryChart"));
@@ -141,20 +152,32 @@
             max: 10000
           },
           calendar: {
-            range: '2017'
+            range: '2020'
           },
           series: {
             type: 'heatmap',
             coordinateSystem: 'calendar',
-            data: getVirtulData(2017)
+            data: getVirtulData(2020)
           }
         });
         window.onresize = function () {//自适应大小
           myChart.resize();
         };
       }
+      function getDays(date){
+        // 构造du1月1日
+        var lastDay = new Date(date);
+        lastDay.setMonth(0);
+        lastDay.setDate(1);
+
+        // 获取zhi距离dao1月1日过去多少zhuan天
+        var days = (date - lastDay) / (1000 * 60 * 60 *24) + 1;
+        return days;
+      }
       onMounted(() => {//需要获取到element,所以是onMounted的Hook
-        http('get', '/article/catCount', ).then(res => {
+
+        console.log(getDays(1610809209000))
+        http('get', '/article/catCount',).then(res => {
           data.catCountData = res.data
           console.log(res)
           for (let item of data.catCountData) {
@@ -164,9 +187,11 @@
           }
           categoryChart()
           clickChart()
+        })
+        http('get', '/todo/todoDateSort?year=2020',).then(res => {
+          data.todoArr = res.data
           summaryChart()
         })
-
 
       });
 
