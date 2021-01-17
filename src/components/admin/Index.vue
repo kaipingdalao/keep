@@ -19,7 +19,7 @@
     <div class="charts">
       <div id="categoryChart" style="width: 900px; height: 400px;"></div>
       <div id="clickChart" style="width: 500px; height: 400px;"></div>
-      <div id="summaryChart" style="width: 1200px; height: 500px;"></div>
+      <div id="summaryChart" style="width: 1200px; height: 250px;"></div>
     </div>
   </div>
 </template>
@@ -117,28 +117,23 @@
       }
 
       const summaryChart = () => {
-        function getVirtulData(year) {
-          year = year || '2021';
+        const currentYear = new Date().getFullYear()
+        const getVirtulData = year => {
+          year = year || currentYear;
           var date = +echarts.number.parseDate(year + '-01-01');
           var end = +echarts.number.parseDate(year + '-12-31');
           var dayTime = 3600 * 24 * 1000;
           var dateData = [];
-          // var dateObj = new Date(); dateObj.setTime(1610294400000);
-          // console.log(end)
           for (var time = date; time <= end; time += dayTime) {
             dateData.push([
               echarts.format.formatTime('yyyy-MM-dd', time),
               // Math.floor(Math.random() * 10000)
-              // Math.floor(10 * 10000)
               Math.floor(0)
             ]);
           }
-          console.log(dateData)
           for (let item of data.todoArr) {
             const day = getDays(item.date * 1000)
-            console.log(item.date)
-            console.log(day)
-            dateData[day-1][1] = 100000
+            dateData[day-1][1] = item.done_state == 1 ? 10000 : 5000
           }
           return dateData;
         }
@@ -149,15 +144,21 @@
           visualMap: {
             show: false,
             min: 0,
-            max: 10000
+            max: 10000,
+            inRange: {
+              color: ['#EBEDF0', '#FB8675', '#00C46C']
+            }
           },
           calendar: {
-            range: '2020'
+            range: currentYear
           },
           series: {
             type: 'heatmap',
             coordinateSystem: 'calendar',
-            data: getVirtulData(2020)
+            data: getVirtulData(currentYear),
+            itemStyle: {
+              borderColor: '#fff'
+            }
           }
         });
         window.onresize = function () {//自适应大小
@@ -175,11 +176,8 @@
         return days;
       }
       onMounted(() => {//需要获取到element,所以是onMounted的Hook
-
-        console.log(getDays(1610809209000))
-        http('get', '/article/catCount',).then(res => {
+        http('get', '/article/catCount').then(res => {
           data.catCountData = res.data
-          console.log(res)
           for (let item of data.catCountData) {
             data.catTitleArr.push(item.title)
             data.catDataArr.push(item.count)
@@ -188,7 +186,7 @@
           categoryChart()
           clickChart()
         })
-        http('get', '/todo/todoDateSort?year=2020',).then(res => {
+        http('get', '/todo/todoDateSort', {year: new Date().getFullYear()}).then(res => {
           data.todoArr = res.data
           summaryChart()
         })

@@ -58,6 +58,7 @@ module.exports = {
   todoSort: async (year) => {
     return await mysql().fields('id',
       'date',
+      'done_state',
       'FROM_UNIXTIME( date, "%Y" ) AS y',
       'FROM_UNIXTIME( date, "%c" ) AS m',
       'FROM_UNIXTIME( date, "%e" ) AS d')
