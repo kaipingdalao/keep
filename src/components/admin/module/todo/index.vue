@@ -2,7 +2,8 @@
   <div id="Log">
     <div class="date-picker">
 <!--      <datePicker :options="calendarArr" :logMarkArr = "logMarkArr" @handleClickDay="selectDate"></datePicker>-->
-      <div id="summaryChart" style="width: 1200px; height: 250px;"></div>
+<!--      <div id="summaryChart" style="width: 1200px; height: 250px;"></div>-->
+      <rili :startDate="start" :endDate="end" :handle-click="handle" :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"></rili>
     </div>
     <div class="todo-box">
       <div class="add-todo">
@@ -35,12 +36,13 @@
 
 <script>
   import datePicker from '/src/components/common/vue3-date-picker/date-picker.vue'
+  import rili from '/src/components/common/Calendar.vue'
   import {reactive, toRefs, computed, onMounted, watchEffect, watch, inject} from 'vue'
   import http from '/src/lib/http'
 
   export default {
     components: {
-      datePicker
+      datePicker,rili
     },
     setup() {
       const state = reactive({
@@ -211,32 +213,32 @@
           return dateData;
         }
 
-        let myChart = echarts.init(document.getElementById("summaryChart"));
-        // 绘制图表
-        myChart.setOption({
-          visualMap: {
-            show: false,
-            min: 0,
-            max: 10000,
-            inRange: {
-              color: ['#EBEDF0', '#FB8675', '#00C46C']
-            }
-          },
-          calendar: {
-            range: '2021-01'
-          },
-          series: {
-            type: 'heatmap',
-            coordinateSystem: 'calendar',
-            data: getVirtulData(2021)
-          }
-        });
-        myChart.on('click', function (params) {
-          console.log(params);
-        });
-        window.onresize = function () {//自适应大小
-          myChart.resize();
-        };
+        // let myChart = echarts.init(document.getElementById("summaryChart"));
+        // // 绘制图表
+        // myChart.setOption({
+        //   visualMap: {
+        //     show: false,
+        //     min: 0,
+        //     max: 10000,
+        //     inRange: {
+        //       color: ['#EBEDF0', '#FB8675', '#00C46C']
+        //     }
+        //   },
+        //   calendar: {
+        //     range: ['2021-01-1', '2021-04-30']
+        //   },
+        //   series: {
+        //     type: 'heatmap',
+        //     coordinateSystem: 'calendar',
+        //     data: getVirtulData(2021)
+        //   }
+        // });
+        // myChart.on('click', function (params) {
+        //   console.log(params);
+        // });
+        // window.onresize = function () {//自适应大小
+        //   myChart.resize();
+        // };
       }
       function getDays(date){
         // 构造du1月1日
@@ -247,6 +249,12 @@
         // 获取zhi距离dao1月1日过去多少zhuan天
         var days = (date - lastDay) / (1000 * 60 * 60 *24) + 1;
         return days;
+      }
+
+      const start = new Date(1609513209000)
+      const end = new Date(1612105209000)
+      const handle = (date, data) => {
+        console.log(date, data)
       }
 
       onMounted(() => {
@@ -269,7 +277,9 @@
         changeTodoState,
         todayAllDone,
         selectTodoType,
-        logMarkArr
+        logMarkArr,
+
+        start, end, handle
       }
     }
   }
