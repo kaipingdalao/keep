@@ -1,7 +1,7 @@
 <template>
   <button @click="handlePrevMonth">-</button>
   <button @click="handleNextMonth">+</button>
-  <div id="summary" style="width: 1200px; height: 500px;"></div>
+  <div id="summary" style="width: auto; height: 420px;"></div>
 </template>
 
 <script>
@@ -54,27 +54,10 @@
       const echarts = inject("ec")
       let myChart = ''
       const summaryChart = () => {
-        const currentYear = new Date().getFullYear()
-        const getVirtulData = year => {
-          year = year || currentYear;
-          console.log(props.startDate || new Date())
-          var date = +echarts.number.parseDate(formatDate(props.startDate));
-          var end = +echarts.number.parseDate(formatDate(props.endDate));
-          var dayTime = 3600 * 24 * 1000;
-          var dateData = [];
-          for (var time = date; time <= end; time += dayTime) {
-            dateData.push([
-              echarts.format.formatTime('yyyy-MM-dd', time),
-              Math.floor(Math.random() * 10000)
-            ]);
-          }
-          return dateData;
-        }
-
-        myChart = echarts.init(document.getElementById("summary"));
+        myChart = echarts.init(document.getElementById("summary"))
         // 绘制图表
         myChart.setOption({
-          // backgroundColor: 'red',
+          backgroundColor: '#ddd',
           visualMap: {
             show: false,
             min: props.options.dataMin,
@@ -85,20 +68,50 @@
           },
           calendar: {
             yearLabel: {
-              position: 'top',
-              margin: 30
+              position: 'left',
+              margin: 60
             },
-            top: 100,
+            monthLabel: {
+              position: 'start',
+              fontSize: 17,
+              margin: 25
+            },
+            // left: 110,
+            left: 'center',
+            top: 70,
             cellSize: 40,
-            // range: [formatDate(props.startDate), formatDate(props.endDate)]
             range: [`${props.startDate.getFullYear()}-${props.startDate.getMonth()+1}`]
-            // range: [`2021-1`]
+          },
+          toolbox: {
+            show: true,
+            itemSize: 30,
+            left: 'center',
+            top: 17,
+            itemGap: 70,
+            feature: {
+              myTool1: {
+                show: true,
+                title: '前一个月',
+                icon: 'image://https://www.chongchongchong.club/static/img/icon/js_icon.svg',
+                onclick: function (){
+                  handlePrevMonth()
+                }
+              },
+              myTool2: {
+                show: true,
+                title: '后一个月',
+                icon: 'image://https://www.chongchongchong.club/static/img/icon/js_icon.svg',
+                onclick: function (){
+                  handleNextMonth()
+                }
+              },
+            }
           },
           series: {
             type: 'heatmap',
             coordinateSystem: 'calendar',
-            data: getVirtulData(props.startDate.getFullYear()),
-            radius: ['100%','100%']
+            data: props.data,
+            radius: ['100%', '100%']
           }
         });
         myChart.on('click', params => {
@@ -113,86 +126,46 @@
         startDate: props.startDate,
         endDate: props.endDate
       })
-      const {startDate,endDate} = toRefs(state)
 
+      const startDate = new Date(state.startDate.getFullYear(), state.startDate.getMonth(), state.startDate.getDate()),
+        endDate = new Date(state.endDate.getFullYear(), state.endDate.getMonth(), state.endDate.getDate())
       const setDate = (around) => {
-        const year = state.startDate.getFullYear(),
-          month = state.startDate.getMonth(),
-          day = state.startDate.getDate()
-        console.log(year, month, day)
-
-        const date = new Date()
-        date.setFullYear(year)
-        date.setMonth(around == '-' ? month : month + 1)
-        date.setDate(day)
-        console.log(date.getFullYear(), date.getMonth(), date.getDate())
-        state.startDate = date
+        around == '-'
+          ? (startDate.setMonth(startDate.getMonth() - 1), endDate.setMonth(endDate.getMonth() - 1))
+          : around == '+'
+          ? (startDate.setMonth(startDate.getMonth() + 1), endDate.setMonth(endDate.getMonth() + 1))
+          : new Error('arg Error')
+        state.startDate = startDate
+        state.endDate = endDate
       }
-      // const test = {
-      //   year: state.startDate.getFullYear(),
-      //   month: state.startDate.getMonth(),
-      //   day: state.startDate.getDate(),
-      //   prev: function() {
-      //     console.log(111)
-      //     console.log(this.month)
-      //     const date = new Date()
-      //     date.setFullYear(this.year)
-      //     date.setMonth(this.month-1)
-      //     date.setDate(this.day)
-      //   },
-      //   next: () => {
-      //     const date = new Date()
-      //     date.setFullYear(year)
-      //     date.setMonth(month+1)
-      //     date.setDate(day)
-      //   }
-      // }
 
       const handlePrevMonth = () => {
         setDate('-')
-        myChart.setOption( {
+        myChart.setOption({
           calendar: {
-            yearLabel: {
-              position: 'top',
-              margin: 30
-            },
-            top: 100,
-            cellSize: 40,
-            range: [`${state.startDate.getFullYear()}-${state.startDate.getMonth()}`]
-          },
-          series: {
-            type: 'heatmap',
-            coordinateSystem: 'calendar',
-            // data: getVirtulData(2021),
-            radius: ['100%','100%']
+            range: [`${state.startDate.getFullYear()}-${state.startDate.getMonth() + 1}`]
           }
         });
 
       }
       const handleNextMonth = () => {
         setDate('+')
-        myChart.setOption( {
+        myChart.setOption({
           calendar: {
-            yearLabel: {
-              position: 'top',
-              margin: 30
-            },
-            top: 100,
-            cellSize: 40,
-            range: [`${state.startDate.getFullYear()}-${state.startDate.getMonth()}`]
-          },
-          series: {
-            type: 'heatmap',
-            coordinateSystem: 'calendar',
-            // data: getVirtulData(2021),
-            radius: ['100%','100%']
+            range: [`${state.startDate.getFullYear()}-${state.startDate.getMonth() + 1}`]
           }
+          // series: {
+          //   type: 'heatmap',
+          //   coordinateSystem: 'calendar',
+          //   // data: getVirtulData(2021),
+          //   radius: ['100%','100%']
+          // }
         });
       }
       onMounted(() => {
         summaryChart()
       })
-      return {state,handlePrevMonth,handleNextMonth,startDate}
+      return {state, handlePrevMonth, handleNextMonth}
     }
   }
 </script>

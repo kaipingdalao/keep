@@ -3,7 +3,11 @@
     <div class="date-picker">
 <!--      <datePicker :options="calendarArr" :logMarkArr = "logMarkArr" @handleClickDay="selectDate"></datePicker>-->
 <!--      <div id="summaryChart" style="width: 1200px; height: 250px;"></div>-->
-      <rili :startDate="start" :endDate="end" :handle-click="handle" :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"></rili>
+      <rili :startDate="start"
+            :endDate="end"
+            :handle-click="handle"
+            :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"
+            :data="getVirtulData()"></rili>
     </div>
     <div class="todo-box">
       <div class="add-todo">
@@ -251,11 +255,32 @@
         return days;
       }
 
-      const start = new Date(1609513209000)
-      const end = new Date(1612105209000)
+      const start = new Date(2021, 0,1)
+      const end = new Date(2021, 0,31)
+      console.log(start)
       const handle = (date, data) => {
         console.log(date, data)
       }
+
+      const formatDate = date => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+      const currentYear = new Date().getFullYear()
+      const getVirtulData = year => {
+        year = year || currentYear;
+        // echarts.number.parseDate 参数格式为2021-1-1 月份值为1-12
+        const date = +echarts.number.parseDate('2021-1-1'),
+          end = +echarts.number.parseDate('2021-1-31'),
+          dayTime = 3600 * 24 * 1000,
+          dateData = [];
+        for (let time = date; time <= end; time += dayTime) {
+          dateData.push([
+            echarts.format.formatTime('yyyy-MM-dd', time),
+            Math.floor(Math.random() * 10000)
+          ]);
+        }
+        console.log(dateData)
+        return dateData;
+      }
+
 
       onMounted(() => {
         getTodoList()
@@ -279,7 +304,7 @@
         selectTodoType,
         logMarkArr,
 
-        start, end, handle
+        start, end, handle,getVirtulData
       }
     }
   }
