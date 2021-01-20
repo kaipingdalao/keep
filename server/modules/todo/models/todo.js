@@ -56,15 +56,24 @@ module.exports = {
     return await mysql().fields('done_state').update(2).where(`id=${id}`).execute()
   },
   todoSort: async (year) => {
-    return await mysql().fields('id',
-      'date',
-      'done_state',
-      'FROM_UNIXTIME( date, "%Y" ) AS y',
-      'FROM_UNIXTIME( date, "%c" ) AS m',
-      'FROM_UNIXTIME( date, "%e" ) AS d')
-      .where(`FROM_UNIXTIME( date, "%Y" ) = ${year}`)
-      .where('done_state != 2')
-      .order('date')
-      .select();
+    // const data = await mysql().fields('id',
+    //   'date',
+    //   'title',
+    //   'done_state',
+    //   'FROM_UNIXTIME( date, "%Y" ) AS y',
+    //   'FROM_UNIXTIME( date, "%c" ) AS m',
+    //   'FROM_UNIXTIME( date, "%e" ) AS d')
+    //   .where(`FROM_UNIXTIME( date, "%Y" ) = ${year}`)
+    //   .where('done_state != 2')
+    //   .order('date')
+    //   .select();
+
+    const sql = `SELECT date,IF (done_sum=count,1,0) AS all_done FROM (SELECT FROM_UNIXTIME(date,'%Y-%m-%d') AS date,sum(done_state) AS done_sum,COUNT(*) AS count FROM todo WHERE FROM_UNIXTIME(date,"%Y")=${year} AND (done_state=1 OR done_state=0) GROUP BY FROM_UNIXTIME(date,'%Y-%m-%d')) AS sort`
+    const res =  await mysql().query(sql)
+    const data = {}
+    res.forEach(res => {
+      data[res.date] = res.all_done
+    })
+    return data
   }
 }

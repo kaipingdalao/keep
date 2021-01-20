@@ -1,6 +1,4 @@
 <template>
-  <button @click="handlePrevMonth">-</button>
-  <button @click="handleNextMonth">+</button>
   <div id="summary" style="width: auto; height: 420px;"></div>
 </template>
 
@@ -57,7 +55,7 @@
         myChart = echarts.init(document.getElementById("summary"))
         // 绘制图表
         myChart.setOption({
-          backgroundColor: '#ddd',
+          // backgroundColor: '#ddd',
           visualMap: {
             show: false,
             min: props.options.dataMin,
@@ -80,28 +78,28 @@
             left: 'center',
             top: 70,
             cellSize: 40,
-            range: [`${props.startDate.getFullYear()}-${props.startDate.getMonth()+1}`]
+            range: [`${props.startDate.getFullYear()}-${props.startDate.getMonth() + 1}`]
           },
           toolbox: {
             show: true,
-            itemSize: 30,
+            itemSize: 15,
             left: 'center',
-            top: 17,
+            top: 23,
             itemGap: 70,
             feature: {
               myTool1: {
                 show: true,
                 title: '前一个月',
-                icon: 'image://https://www.chongchongchong.club/static/img/icon/js_icon.svg',
-                onclick: function (){
+                icon: "M705 923c-6.4 0-12.8-2.4-17.7-7.3l-386-386c-9.8-9.8-9.8-25.6 0-35.4l386-386c9.8-9.8 25.6-9.8 35.4 0 9.8 9.8 9.8 25.6 0 35.4L354.4 512l368.3 368.3c9.8 9.8 9.8 25.6 0 35.4-4.9 4.9-11.3 7.3-17.7 7.3z",
+                onclick: function () {
                   handlePrevMonth()
                 }
               },
               myTool2: {
                 show: true,
                 title: '后一个月',
-                icon: 'image://https://www.chongchongchong.club/static/img/icon/js_icon.svg',
-                onclick: function (){
+                icon: "M319 923c-6.4 0-12.8-2.4-17.7-7.3-9.8-9.8-9.8-25.6 0-35.4L669.6 512 301.3 143.7c-9.8-9.8-9.8-25.6 0-35.4 9.8-9.8 25.6-9.8 35.4 0l386 386c9.8 9.8 9.8 25.6 0 35.4l-386 386c-4.9 4.9-11.3 7.3-17.7 7.3z",
+                onclick: function () {
                   handleNextMonth()
                 }
               },

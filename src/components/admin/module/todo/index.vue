@@ -1,13 +1,13 @@
 <template>
   <div id="Log">
     <div class="date-picker">
-<!--      <datePicker :options="calendarArr" :logMarkArr = "logMarkArr" @handleClickDay="selectDate"></datePicker>-->
-<!--      <div id="summaryChart" style="width: 1200px; height: 250px;"></div>-->
+      <!--      <datePicker :options="calendarArr" :logMarkArr = "logMarkArr" @handleClickDay="selectDate"></datePicker>-->
+      <!--      <div id="summaryChart" style="width: 1200px; height: 250px;"></div>-->
       <rili :startDate="start"
             :endDate="end"
             :handle-click="handle"
             :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"
-            :data="getVirtulData()"></rili>
+            :data="formatData(1609430400000,1612022400000)"></rili>
     </div>
     <div class="todo-box">
       <div class="add-todo">
@@ -46,7 +46,7 @@
 
   export default {
     components: {
-      datePicker,rili
+      datePicker, rili
     },
     setup() {
       const state = reactive({
@@ -89,7 +89,6 @@
           console.log(res)
           state.todoList = res.data
           countUndone()
-          summaryChart()
         })
       }
       // 更改状态
@@ -193,76 +192,48 @@
         return logMarkState.markArr
       }
 
-      const echarts = inject("ec")
-      const summaryChart = () => {
-        const currentYear = new Date().getFullYear()
-        const getVirtulData = year => {
-          year = year || currentYear;
-          var date = +echarts.number.parseDate(year + '-01-01');
-          var end = +echarts.number.parseDate(year + '-12-31');
-          var dayTime = 3600 * 24 * 1000;
-          var dateData = [];
-          for (var time = date; time <= end; time += dayTime) {
-            dateData.push([
-              echarts.format.formatTime('yyyy-MM-dd', time),
-              // Math.floor(Math.random() * 10000)
-              Math.floor(0)
-            ]);
-          }
-          console.log(state.todoList)
-          for (let item of state.todoList) {
-            const day = getDays(item.date * 1000)
-            dateData[day-1][1] = item.done_state == 1 ? 10000 : 5000
-          }
-          return dateData;
-        }
-
-        // let myChart = echarts.init(document.getElementById("summaryChart"));
-        // // 绘制图表
-        // myChart.setOption({
-        //   visualMap: {
-        //     show: false,
-        //     min: 0,
-        //     max: 10000,
-        //     inRange: {
-        //       color: ['#EBEDF0', '#FB8675', '#00C46C']
-        //     }
-        //   },
-        //   calendar: {
-        //     range: ['2021-01-1', '2021-04-30']
-        //   },
-        //   series: {
-        //     type: 'heatmap',
-        //     coordinateSystem: 'calendar',
-        //     data: getVirtulData(2021)
-        //   }
-        // });
-        // myChart.on('click', function (params) {
-        //   console.log(params);
-        // });
-        // window.onresize = function () {//自适应大小
-        //   myChart.resize();
-        // };
-      }
-      function getDays(date){
+      function getDays(date) {
         // 构造du1月1日
-        var lastDay = new Date(date);
+        var lastDay = new Date(date);
         lastDay.setMonth(0);
         lastDay.setDate(1);
-
         // 获取zhi距离dao1月1日过去多少zhuan天
-        var days = (date - lastDay) / (1000 * 60 * 60 *24) + 1;
-        return days;
+        var days = (date - lastDay) / (1000 * 60 * 60 * 24) + 1;
+        return days;
       }
 
-      const start = new Date(2021, 0,1)
-      const end = new Date(2021, 0,31)
-      console.log(start)
+      const start = new Date(2021, 0, 1)
+      const end = new Date(2021, 0, 31)
+      const sortData = reactive({
+        sortArr: []
+      })
+      const {sortArr} = toRefs(sortData)
       const handle = (date, data) => {
         console.log(date, data)
       }
+      const getSortArr = () => {
+        http('get', '/todo/todoDateSort', {year:2021}).then(res => {
+          let data = res.data
+          sortData.sortArr = data
+        })
+      }
+      const formatData = (startStamp, endStamp) => {
+        const dayTime = 3600 * 24 * 1000,
+          dateData = [];
+        for (let time = startStamp; time <= endStamp; time += dayTime) {
+          let date = echarts.format.formatTime('yyyy-MM-dd', time)
+          let da = sortData.sortArr[date] == 1 ? 10000 : 0
+          dateData.push([
+            echarts.format.formatTime('yyyy-MM-dd', time),
+            da
+          ]);
+        }
+        console.log(dateData)
+        return dateData;
+      }
 
       const formatDate = date => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+      const echarts = inject("ec")
       const currentYear = new Date().getFullYear()
       const getVirtulData = year => {
         year = year || currentYear;
@@ -284,6 +255,7 @@
 
       onMounted(() => {
         getTodoList()
+        getSortArr()
         // summaryChart()
         // http('get', '/todo/todoDateSort', {year: new Date().getFullYear()}).then(res => {
         //   state.todoList = res.data
@@ -302,9 +274,9 @@
         changeTodoState,
         todayAllDone,
         selectTodoType,
-        logMarkArr,
+        logMarkArr,formatData,
 
-        start, end, handle,getVirtulData
+        start, end, handle, getVirtulData
       }
     }
   }
