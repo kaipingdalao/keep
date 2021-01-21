@@ -72,6 +72,14 @@
       })
       let {calendarArr, todoList, addTodoTitle, sumUndone, todoType, time} = toRefs(state)
 
+      // 时间转换年月日
+      const dateFormat = date => {
+        const year = date.getFullYear(),
+          month = date.getMonth() + 1,
+          day = date.getDate()
+        return {year, month, day}
+      }
+
       // 获取todo列表
       const getTodoList = () => {
         http('get', '/todo/getTodoList', {...dateFormat(state.time)}).then(res => {
@@ -168,59 +176,92 @@
         state.sumUndone = sum
       }
 
-      // 日历日期
-      const year = state.time.getFullYear(),
-        month = state.time.getMonth()
-      const start = new Date(year, month, 1)
-      const end = new Date(year, month+1,0)
-      // const start = new Date(2021, 0, 1)
-      // const end = new Date(2021, 0, 31)
+      const logMarkArr = (year) => {
+        let logMarkState = reactive({
+          markArr: {}
+        })
+        http('get', '/todo/todoDateSort', {year}).then(res => {
+          let data = res.data
+          // 格式化
+          for (let item of data) {
+            let {m, d} = item
+            !(m in logMarkState.markArr) && (logMarkState.markArr[m] = {})
+            logMarkState.markArr[m][d] = true
+          }
+        })
+        return logMarkState.markArr
+      }
+
+      function getDays(date) {
+        // 构造du1月1日
+        var lastDay = new Date(date);
+        lastDay.setMonth(0);
+        lastDay.setDate(1);
+        // 获取zhi距离dao1月1日过去多少zhuan天
+        var days = (date - lastDay) / (1000 * 60 * 60 * 24) + 1;
+        return days;
+      }
+
+      const start = new Date(2021, 0, 1)
+      const end = new Date(2021, 0, 31)
       const sortData = reactive({
         sortArr: []
       })
-      // 选择日期触发函数
+      const {sortArr} = toRefs(sortData)
       const handle = (date, data) => {
         console.log(date, data)
       }
-      // 获取todo统计
       const getSortArr = () => {
-        http('get', '/todo/todoDateSort', {year: state.time.getFullYear()}).then(res => {
+        http('get', '/todo/todoDateSort', {year:2021}).then(res => {
           let data = res.data
           sortData.sortArr = data
         })
       }
-      // 生成日历数据
       const formatData = (startStamp, endStamp) => {
         const dayTime = 3600 * 24 * 1000,
-          data = reactive({
-            dateData: []
-          }),
-          dateHandle = new Date()
+          data = reactive({dateData:[]}),
+          {dateData} = toRefs(data)
         for (let time = startStamp; time <= endStamp; time += dayTime) {
-          dateHandle.setTime(time)
-          // 需要 yyyy-MM-dd 格式时间
-          let date = formatDate(dateHandle)
-          let value = sortData.sortArr[date] !== undefined ? (sortData.sortArr[date] == 1 ? 10000 : 5000) : ''
+          let date = echarts.format.formatTime('yyyy-MM-dd', time)
+          let da = sortData.sortArr[date] == 1 ? 10000 : 0
           data.dateData.push([
-            date,
-            value
+            echarts.format.formatTime('yyyy-MM-dd', time),
+            da
           ]);
         }
+        console.log(dateData)
         return data.dateData;
       }
 
-      // 格式化时间， date对象转 yyyy-MM-dd 格式时间
-      const formatDate = date => {
-        const month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : `0${date.getMonth() + 1}`
-        const day = date.getDate() >= 10 ? date.getDate() : `0${date.getDate()}`
-        return `${date.getFullYear()}-${month}-${day}`
-
-        // return date.toLocaleDateString().replace(/\//g, '-')
+      const formatDate = date => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+      const echarts = inject("ec")
+      const currentYear = new Date().getFullYear()
+      const getVirtulData = year => {
+        year = year || currentYear;
+        // echarts.number.parseDate 参数格式为2021-1-1 月份值为1-12
+        const date = +echarts.number.parseDate('2021-1-1'),
+          end = +echarts.number.parseDate('2021-1-31'),
+          dayTime = 3600 * 24 * 1000,
+          dateData = [];
+        for (let time = date; time <= end; time += dayTime) {
+          dateData.push([
+            echarts.format.formatTime('yyyy-MM-dd', time),
+            Math.floor(Math.random() * 10000)
+          ]);
+        }
+        console.log(dateData)
+        return dateData;
       }
+
 
       onMounted(() => {
         getTodoList()
         getSortArr()
+        // summaryChart()
+        // http('get', '/todo/todoDateSort', {year: new Date().getFullYear()}).then(res => {
+        //   state.todoList = res.data
+        //   summaryChart()
+        // })
       })
 
       return {
@@ -234,24 +275,12 @@
         changeTodoState,
         todayAllDone,
         selectTodoType,
-        formatData,
+        logMarkArr,formatData,
 
-        start, end, handle
+        start, end, handle, getVirtulData
       }
     }
   }
-
-
-  // 时间转换年月日
-  const dateFormat = date => {
-    const year = date.getFullYear(),
-      month = date.getMonth() + 1,
-      day = date.getDate()
-    return {year, month, day}
-  }
-
-
-
 </script>
 
 <style scoped lang="less">

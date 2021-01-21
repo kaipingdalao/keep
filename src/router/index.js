@@ -17,6 +17,7 @@ import ArticleEdit from '../components/admin/module/article/edit.vue'
 import ArticleList from '../components/admin/module/article/list.vue'
 import AdminLog from '../components/admin/module/log/index.vue'
 import AdminToDo from '../components/admin/module/todo/index.vue'
+import test from '../components/admin/module/todo/todotest.vue'
 
 const routerHistory = createWebHistory()
 
@@ -77,6 +78,9 @@ const router = createRouter({
         },
         {
           path: 'ToDo', name: 'ToDo', component: AdminToDo, meta: {title: "ToDo", icon: 'todo_icon.svg'}
+        },
+        {
+          path: 'test', name: 'test', component: test, meta: {title: "testTodo", icon: 'todo_icon.svg'}
         },
       ],
     },

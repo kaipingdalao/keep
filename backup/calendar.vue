@@ -53,6 +53,7 @@
         myChart = echarts.init(document.getElementById("summary"))
         // 绘制图表
         myChart.setOption({
+          // backgroundColor: '#ddd',
           visualMap: {
             show: false,
             min: props.options.dataMin,
@@ -71,6 +72,7 @@
               fontSize: 17,
               margin: 25
             },
+            // left: 110,
             left: 'center',
             top: 70,
             cellSize: 40,
@@ -82,7 +84,6 @@
             left: 'center',
             top: 23,
             itemGap: 70,
-            // 自定义功能按钮
             feature: {
               myTool1: {
                 show: true,
@@ -124,6 +125,22 @@
 
       const startDate = new Date(state.startDate.getFullYear(), state.startDate.getMonth(), state.startDate.getDate()),
         endDate = new Date(state.endDate.getFullYear(), state.endDate.getMonth(), state.endDate.getDate())
+      // const setDate = (around) => {
+      //   around == '-'
+      //     ? (startDate.setMonth(startDate.getMonth() - 1), endDate.setMonth(endDate.getMonth() - 1))
+      //     : around == '+'
+      //     ? (startDate.setMonth(startDate.getMonth() + 1), endDate.setMonth(endDate.getMonth() + 1))
+      //     : new Error('arg Error')
+      //   state.startDate = startDate
+      //   state.endDate = endDate
+      //
+      //   // 重新配置表
+      //   myChart.setOption({
+      //     calendar: {
+      //       range: [`${state.startDate.getFullYear()}-${state.startDate.getMonth() + 1}`]
+      //     }
+      //   })
+      // }
       const setDate = {
         setOptions: () => {
           myChart.setOption({
