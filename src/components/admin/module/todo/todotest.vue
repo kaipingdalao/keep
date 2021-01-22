@@ -1,41 +1,37 @@
 <template>
   <div id="Log">
-    <h1>{{dateState.date}}===</h1>
-    <h1>{{dateState.year}}===</h1>
-    <h1>{{dateState.month}}===</h1>
-    <h1>{{dateState.day}}===</h1>
     <div class="date-picker">
       <calendar :startDate="dateState.monthFirstDay"
-            :endDate="dateState.monthEndDay"
-            :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"
+                :endDate="dateState.monthEndDay"
+                :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"
       ></calendar>
     </div>
-<!--    <div class="todo-box">-->
-<!--      <div class="add-todo">-->
-<!--        <select @change="selectTodoType">-->
-<!--          <option value="once">once</option>-->
-<!--          <option value="everyday">everyday</option>-->
-<!--        </select>-->
-<!--        <input placeholder="add Todo" v-model="addTodoTitle" @keyup.enter="addToto(addTodoTitle)"/>-->
-<!--        <button @click="addToto(addTodoTitle)">+</button>-->
-<!--      </div>-->
-<!--      <div class="todo-handle" v-show="sumUndone == 0 ? false : true">-->
-<!--        <i>{{sumUndone}} item undone</i>-->
-<!--        <button @click="todayAllDone">all Done</button>-->
-<!--      </div>-->
-<!--      <ul class="add-list">-->
-<!--        <li class="no-todo" v-show="todoList.length == 0 ? true : false">-->
-<!--          <i>今天还没有代办事项哟</i>-->
-<!--        </li>-->
-<!--        <li v-for="(item,index) in todoList">-->
-<!--          <input type="checkbox"-->
-<!--                 :checked="item.done_state == 0 ? false : true"-->
-<!--                 @click="changeTodoState(item.id, index)"/>-->
-<!--          <label>{{item.title}}</label>-->
-<!--          <button @click="delTodo(item, index)"></button>-->
-<!--        </li>-->
-<!--      </ul>-->
-<!--    </div>-->
+        <div class="todo-box">
+          <div class="add-todo">
+            <select @change="state.todo.type">
+              <option value="once">once</option>
+              <option value="everyday">everyday</option>
+            </select>
+            <input placeholder="add Todo" v-model="state.todo.title" @keyup.enter="todos.add(state.todo)"/>
+            <button @click="todos.add(state.todo)">+</button>
+          </div>
+          <div class="todo-handle" v-show="todos.undone == 0 ? false : true">
+            <i>{{todos.undone}} item undone</i>
+            <button @click="todos.allDone(dateFormat(dateState.date))">all Done</button>
+          </div>
+          <ul class="add-list">
+            <li class="no-todo" v-show="todos.todoList.length == 0 ? true : false">
+              <i>今天还没有代办事项哟</i>
+            </li>
+            <li v-for="(item,index) in todos.todoList">
+              <input type="checkbox"
+                     :checked="item.done_state == 0 ? false : true"
+                     @click="todos.changeState(item, index)"/>
+              <label>{{item.title}}</label>
+              <button @click="todos.del(item, index)"></button>
+            </li>
+          </ul>
+        </div>
   </div>
 </template>
 
@@ -53,8 +49,70 @@
     monthEndDay: computed(() => new Date(dateState.year, dateState.month, 0))
   })
 
-  const todo = reactive({
-    todoList: []
+  const todos = reactive({
+    todoList: [],
+    dateSort: [],
+    add: todo => {
+      http('get', '/todo/addTodo', {
+        title: todo.title,
+        ...todo.date,
+        todoType: todo.type
+      }).then(res => {
+        if (res.code == 200) {
+          console.log(res)
+          const date = new Date(todo.date.year, todo.date.month, todo.date.day)
+          todo = {...todo, date: date.getTime(), id: res.data.newTodoId, done_state: false}
+          todos.todoList.unshift(todo)
+          console.log('成功')
+          console.log(todos.todoList)
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    set: todo => {
+    },
+    del: (todo,index) => {
+      const data = {
+        id: todo.id,
+        everydayId: todo.everydayId
+      }
+      http('get', '/todo/delTodo', {...data}).then(res => {
+        if (res.code == 200) {
+          todos.todoList.splice(index, 1)
+          console.log('成功')
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    changeState: (todo, index) => {
+      http('get', '/todo/setTodoState', {id: todo.id}).then(res => {
+        if (res.code == 200) {
+          console.log('成功')
+          todos.todoList[index].done_state = !todos.todoList[index].done_state
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    allDone: date => {
+      http('get', '/todo/todoAllDone', {...date}).then(res => {
+        if (res.code == 200) {
+          console.log('成功')
+          for (let item of todos.todoList) {
+            item.done_state = true
+          }
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    undone: computed(() => {
+      let sum = 0
+      for (let item of todos.todoList) !item.done_state && sum++
+      return sum
+    })
   })
 
   export default {
@@ -63,9 +121,25 @@
     },
     setup() {
       const state = reactive({
+        text: '',
+        todo: {
+          title: '',
+          type: 'once',
+          date: {
+            year: dateState.year,
+            month: dateState.month +1,
+            day: dateState.day
+          }
+        }
+      })
+      onMounted(() => {
+        getTodoList({year: dateState.year, month: dateState.month + 1, day: dateState.day})
+          .then(res => todos.todoList = res.data)
+        todoDateSort(dateState.year).then(res => todos.dateSort = res.data)
+        // console.log(todoDateSort(2021))
       })
       return {
-        dateState,formatDate
+        dateState, formatDate, dateFormat, todos, state
       }
     }
   }
@@ -75,9 +149,27 @@
     const month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : `0${date.getMonth() + 1}`
     const day = date.getDate() >= 10 ? date.getDate() : `0${date.getDate()}`
     return `${date.getFullYear()}-${month}-${day}`
-
     // return date.toLocaleDateString().replace(/\//g, '-')
   }
+
+  // date: year,month,day
+  const getTodoList = async date => {
+    return await http('get', '/todo/getTodoList', {...date})
+  }
+
+  // 获取日期统计
+  const todoDateSort = async year => {
+    return await http('get', '/todo/todoDateSort', {year})
+  }
+
+  // 时间转换年月日
+  const dateFormat = date => {
+    const year = date.getFullYear(),
+      month = date.getMonth() + 1,
+      day = date.getDate()
+    return {year, month, day}
+  }
+
 
 </script>
 

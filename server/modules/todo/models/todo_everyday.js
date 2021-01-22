@@ -17,7 +17,7 @@ module.exports = {
     return result.affectedRows == 1 ? result : false
   },
   delEverydayTodo: async id => {
-    return await mysql().fields('end_date')
+    return mysql().fields('end_date')
       .update(parseInt(new Date().getTime() / 1000))
       .where(`id=${id}`)
       .execute()

@@ -80,7 +80,7 @@ const router = createRouter({
           path: 'ToDo', name: 'ToDo', component: AdminToDo, meta: {title: "ToDo", icon: 'todo_icon.svg'}
         },
         {
-          path: 'test', name: 'test', component: test, meta: {title: "testTodo", icon: 'todo_icon.svg'}
+          path: 'test', name: 'test', component: test, meta: {title: "testTodo", icon: 'test.svg'}
         },
       ],
     },
