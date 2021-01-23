@@ -1,37 +1,37 @@
 <template>
   <div id="Log">
     <div class="date-picker">
-            <datePicker :options="calendarArr" :logMarkArr = "logMarkArr" @handleClickDay="selectDate"></datePicker>
-            <div id="summaryChart" style="width: 1200px; height: 250px;"></div>
-<!--      <rili :startDate="start"-->
-<!--            :endDate="end"-->
-<!--            :handle-click="handle"-->
-<!--            :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"-->
-<!--            :data="formatData(1609430400000,1612022400000)"></rili>-->
+      <calendar :startDate="dateState.monthFirstDay"
+                :endDate="dateState.monthEndDay"
+                :clickHandle="selectDateHandle"
+                :monthHandle="monthHandle"
+                :options="{dataMin:0, dataMax:15000, inRangeColor:['#EDEBF0', '#EEA69D', '#00C46B']}"
+                :data="todos.dateSort"
+      ></calendar>
     </div>
     <div class="todo-box">
       <div class="add-todo">
-        <select @change="selectTodoType">
+        <select @change="state.todo.type">
           <option value="once">once</option>
           <option value="everyday">everyday</option>
         </select>
-        <input placeholder="add Todo" v-model="addTodoTitle" @keyup.enter="addToto(addTodoTitle)"/>
-        <button @click="addToto(addTodoTitle)">+</button>
+        <input placeholder="add Todo" v-model="state.todo.title" @keyup.enter="todos.add(state.todo)"/>
+        <button @click="todos.add(state.todo)">+</button>
       </div>
-      <div class="todo-handle" v-show="sumUndone == 0 ? false : true">
-        <i>{{sumUndone}} item undone</i>
-        <button @click="todayAllDone">all Done</button>
+      <div class="todo-handle" v-show="todos.undone == 0 ? false : true">
+        <i>{{todos.undone}} item undone</i>
+        <button @click="todos.allDone(dateFormat(dateState.date))">all Done</button>
       </div>
       <ul class="add-list">
-        <li class="no-todo" v-show="todoList.length == 0 ? true : false">
+        <li class="no-todo" v-show="todos.todoList.length == 0 ? true : false">
           <i>今天还没有代办事项哟</i>
         </li>
-        <li v-for="(item,index) in todoList">
+        <li v-for="(item,index) in todos.todoList">
           <input type="checkbox"
                  :checked="item.done_state == 0 ? false : true"
-                 @click="changeTodoState(item.id, index)"/>
+                 @click="todos.changeState(item, index)"/>
           <label>{{item.title}}</label>
-          <button @click="delTodo(item, index)"></button>
+          <button @click="todos.del(item, index)"></button>
         </li>
       </ul>
     </div>
@@ -39,208 +39,176 @@
 </template>
 
 <script>
-  import datePicker from '/src/components/common/vue3-date-picker/date-picker.vue'
-  import rili from '/src/components/common/Calendar.vue'
+  import calendar from '/src/components/common/Calendar.vue'
   import {reactive, toRefs, computed, onMounted, watchEffect, watch, inject} from 'vue'
   import http from '/src/lib/http'
 
+  const dateState = reactive({
+    date: new Date(),
+    year: computed(() => dateState.date.getFullYear()),
+    month: computed(() => dateState.date.getMonth()),
+    day: computed(() => dateState.date.getDate()),
+    monthFirstDay: computed(() => new Date(dateState.year, dateState.month, 1)),
+    monthEndDay: computed(() => new Date(dateState.year, dateState.month + 1, 0))
+  })
+
+  const todos = reactive({
+    todoList: [],
+    dateSort: [],
+    add: todo => {
+      http('get', '/todo/addTodo', {
+        title: todo.title,
+        ...todo.date,
+        todoType: todo.type
+      }).then(res => {
+        if (res.code == 200) {
+          console.log(res)
+          const date = new Date(todo.date.year, todo.date.month, todo.date.day)
+          todo = {...todo, date: date.getTime(), id: res.data.newTodoId, done_state: false}
+          todos.todoList.unshift(todo)
+          console.log('成功')
+          console.log(todos.todoList)
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    set: todo => {
+    },
+    del: (todo, index) => {
+      const data = {
+        id: todo.id,
+        everydayId: todo.everydayId
+      }
+      http('get', '/todo/delTodo', {...data}).then(res => {
+        if (res.code == 200) {
+          todos.todoList.splice(index, 1)
+          console.log('成功')
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    changeState: (todo, index) => {
+      http('get', '/todo/setTodoState', {id: todo.id}).then(res => {
+        if (res.code == 200) {
+          console.log('成功')
+          todos.todoList[index].done_state = !todos.todoList[index].done_state
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    allDone: date => {
+      http('get', '/todo/todoAllDone', {...date}).then(res => {
+        if (res.code == 200) {
+          console.log('成功')
+          for (let item of todos.todoList) {
+            item.done_state = true
+          }
+        } else {
+          console.log('失败')
+        }
+      })
+    },
+    undone: computed(() => {
+      let sum = 0
+      for (let item of todos.todoList) !item.done_state && sum++
+      return sum
+    })
+  })
+
   export default {
     components: {
-      datePicker, rili
+      calendar
     },
     setup() {
       const state = reactive({
-        // 日历选项
-        calendarArr: {
-          type: 'combination',
-          headStyle: {
-            todayBtn: 'right',
-            combination: 'center',
-            checkBtn: 'right',
-          },
-          viewStyle: {
-            day: 'right'
-          },
-          afterClick: true,
-          calendarData: []
-        },
-        todoList: [],
-        addTodoTitle: '',
-        time: new Date(),
-        sumUndone: 0,
-        todoType: 'once'
-      })
-      let {calendarArr, todoList, addTodoTitle, sumUndone, todoType, time} = toRefs(state)
-
-      // 获取todo列表
-      const getTodoList = () => {
-        http('get', '/todo/getTodoList', {...dateFormat(state.time)}).then(res => {
-          for (let i of res.data) {
-            i.done_state = i.done_state == 1 ? true : false
+        text: '',
+        todo: {
+          title: '',
+          type: 'once',
+          date: {
+            year: dateState.year,
+            month: dateState.month + 1,
+            day: dateState.day
           }
-          console.log(res)
-          state.todoList = res.data
-          countUndone()
-        })
-      }
-      // 更改状态
-      const changeTodoState = (id, index) => {
-        http('get', '/todo/setTodoState', {id}).then(res => {
-          if (res.code == 200) {
-            console.log('成功')
-            state.todoList[index].done_state = !state.todoList[index].done_state
-            countUndone()
-          } else {
-            console.log('失败')
-          }
-        })
-      }
-
-      // 当日已完成
-      const todayAllDone = () => {
-        http('get', '/todo/todoAllDone', {...dateFormat(state.time)}).then(res => {
-          if (res.code == 200) {
-            console.log('成功')
-            for (let item of state.todoList) {
-              item.done_state = true
-            }
-          } else {
-            console.log('失败')
-          }
-        })
-      }
-
-      // 选择待办类型
-      const selectTodoType = (e) => {
-        state.todoType = e.target.value
-      }
-
-      // 添加todo
-      const addToto = () => {
-        const title = state.addTodoTitle
-        http('get', '/todo/addTodo', {title, ...dateFormat(state.time), todoType: state.todoType}).then(res => {
-          if (res.code == 200) {
-            console.log(res)
-            state.todoList.unshift({
-              id: res.data.newTodoId,
-              title: title,
-              date: parseInt(new Date().getTime() / 1000),
-              done_state: false
-            })
-            state.addTodoTitle = ''
-            console.log('成功')
-            countUndone()
-          } else {
-            console.log('失败')
-          }
-        })
-      }
-
-      // 删除
-      const delTodo = (item, index) => {
-        const data = {
-          id: item.id,
-          everydayId: item.everydayId
         }
-        http('get', '/todo/delTodo', {...data}).then(res => {
-          if (res.code == 200) {
-            console.log('成功')
-            state.todoList.splice(index, 1)
-            countUndone()
-          } else {
-            console.log('失败')
-          }
-        })
-      }
-
-      // 选择日期
-      const selectDate = date => {
-        state.time.setFullYear(date.year, date.month - 1, date.day)
-        getTodoList()
-      }
-
-      // 统计未完成
-      const countUndone = () => {
-        let sum = 0
-        for (let item of state.todoList) {
-          !item.done_state && sum++
-        }
-        state.sumUndone = sum
-      }
-
-      // 日历日期
-      const year = state.time.getFullYear(),
-        month = state.time.getMonth()
-      const start = new Date(year, month, 1)
-      const end = new Date(year, month+1,0)
-      // const start = new Date(2021, 0, 1)
-      // const end = new Date(2021, 0, 31)
-      const sortData = reactive({
-        sortArr: []
       })
-      // 选择日期触发函数
-      const handle = (date, data) => {
-        console.log(date, data)
+
+      // 点击日期时间
+      const selectDateHandle = (date, data) => {
+        const [year, month, day] = date.split("-")
+        console.log(year, month, day)
+        // 重新赋值才能触发 watchEffect 监听，setDate函数不能触发
+        const newDate = new Date(year, month-1, day)
+        dateState.date = newDate
       }
-      // 获取todo统计
-      const getSortArr = () => {
-        http('get', '/todo/todoDateSort', {year: state.time.getFullYear()}).then(res => {
-          let data = res.data
-          sortData.sortArr = data
-        })
+
+      // 上下月
+      const monthHandle = (data) => {
+        console.log(data)
+        setCalendarData()
       }
+
       // 生成日历数据
-      const formatData = (startStamp, endStamp) => {
-        const dayTime = 3600 * 24 * 1000,
-          data = reactive({
-            dateData: []
-          }),
-          dateHandle = new Date()
-        for (let time = startStamp; time <= endStamp; time += dayTime) {
-          dateHandle.setTime(time)
-          // 需要 yyyy-MM-dd 格式时间
-          let date = formatDate(dateHandle)
-          let value = sortData.sortArr[date] !== undefined ? (sortData.sortArr[date] == 1 ? 10000 : 5000) : ''
-          data.dateData.push([
-            date,
-            value
-          ]);
-        }
-        return data.dateData;
-      }
-
-      // 格式化时间， date对象转 yyyy-MM-dd 格式时间
-      const formatDate = date => {
-        const month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : `0${date.getMonth() + 1}`
-        const day = date.getDate() >= 10 ? date.getDate() : `0${date.getDate()}`
-        return `${date.getFullYear()}-${month}-${day}`
-
-        // return date.toLocaleDateString().replace(/\//g, '-')
+      const setCalendarData = () => {
+        todoDateSort(dateState.year).then(res => {
+          const dayTime = 3600 * 24 * 1000,
+            startStamp = dateState.monthFirstDay.getTime(),
+            endStamp = dateState.monthEndDay.getTime(),
+            data = reactive({
+              dateData: []
+            }),
+            dateHandle = new Date()
+          for (let time = startStamp; time <= endStamp; time += dayTime) {
+            dateHandle.setTime(time)
+            // 需要 yyyy-MM-dd 格式时间
+            let date = formatDate(dateHandle)
+            let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 6000) : 0
+            data.dateData.push([date,value]);
+          }
+          todos.dateSort = data.dateData
+        })
       }
 
       onMounted(() => {
-        getTodoList()
-        getSortArr()
+        // watchEffect 函数会初始化执行一遍回调函数
+        watchEffect(() => {
+          getTodoList({year: dateState.year, month: dateState.month + 1, day: dateState.day})
+            .then(res => todos.todoList = res.data)
+        })
+
+        // vue3的watch函数监听
+        // 响应式对象： () => state.test ，初始化时会执行一遍回调函数
+        // 普通类型： test
+        watch(() => todos.undone, (newVal, oldVal) => {
+          (!!!newVal && !!oldVal || !!newVal && !!!oldVal) && setCalendarData()
+        })
       })
-
       return {
-        calendarArr,
-        todoList,
-        addTodoTitle,
-        sumUndone,
-        selectDate,
-        addToto,
-        delTodo,
-        changeTodoState,
-        todayAllDone,
-        selectTodoType,
-        formatData,
-
-        start, end, handle
+        dateState, todos, state, formatDate, dateFormat, selectDateHandle, monthHandle
       }
     }
   }
 
+  // 格式化时间， date对象转 yyyy-MM-dd 格式时间
+  const formatDate = date => {
+    const month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : `0${date.getMonth() + 1}`
+    const day = date.getDate() >= 10 ? date.getDate() : `0${date.getDate()}`
+    return `${date.getFullYear()}-${month}-${day}`
+    // return date.toLocaleDateString().replace(/\//g, '-')
+  }
+
+  // date: year,month,day
+  const getTodoList = async date => {
+    return await http('get', '/todo/getTodoList', {...date})
+  }
+
+  // 获取日期统计
+  const todoDateSort = async year => {
+    return await http('get', '/todo/todoDateSort', {year})
+  }
 
   // 时间转换年月日
   const dateFormat = date => {
@@ -249,7 +217,6 @@
       day = date.getDate()
     return {year, month, day}
   }
-
 
 
 </script>
@@ -262,7 +229,7 @@
     justify-content: flex-start;
 
     .date-picker {
-      width: 40%;
+      width: 30%;
       overflow-y: scroll;
     }
 

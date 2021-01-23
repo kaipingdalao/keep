@@ -68,7 +68,7 @@ module.exports = {
     //   .order('date')
     //   .select();
 
-    const sql = `SELECT date,IF (done_sum=count,1,0) AS all_done FROM (SELECT FROM_UNIXTIME(date,'%Y-%m-%d') AS date,sum(done_state) AS done_sum,COUNT(*) AS count FROM todo WHERE FROM_UNIXTIME(date,"%Y")=${year} AND (done_state=1 OR done_state=0) GROUP BY FROM_UNIXTIME(date,'%Y-%m-%d')) AS sort`
+    const sql = `SELECT date,IF (done_sum=count,1,0) AS all_done FROM (SELECT FROM_UNIXTIME(date/1000,'%Y-%m-%d') AS date,sum(done_state) AS done_sum,COUNT(*) AS count FROM todo WHERE FROM_UNIXTIME(date/1000,"%Y")=${year} AND (done_state=1 OR done_state=0) GROUP BY FROM_UNIXTIME(date/1000,'%Y-%m-%d')) AS sort`
     const res =  await mysql().query(sql)
     const data = {}
     res.forEach(res => {

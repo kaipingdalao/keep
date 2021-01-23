@@ -3,35 +3,38 @@
     <div class="date-picker">
       <calendar :startDate="dateState.monthFirstDay"
                 :endDate="dateState.monthEndDay"
-                :options="{dataMin:90, dataMax:10000, inRangeColor:['red', 'yellow']}"
+                :clickHandle="selectDateHandle"
+                :monthHandle="monthHandle"
+                :options="{dataMin:0, dataMax:15000, inRangeColor:['#EDEBF0', '#EEA69D', '#00C46B']}"
+                :data="todos.dateSort"
       ></calendar>
     </div>
-        <div class="todo-box">
-          <div class="add-todo">
-            <select @change="state.todo.type">
-              <option value="once">once</option>
-              <option value="everyday">everyday</option>
-            </select>
-            <input placeholder="add Todo" v-model="state.todo.title" @keyup.enter="todos.add(state.todo)"/>
-            <button @click="todos.add(state.todo)">+</button>
-          </div>
-          <div class="todo-handle" v-show="todos.undone == 0 ? false : true">
-            <i>{{todos.undone}} item undone</i>
-            <button @click="todos.allDone(dateFormat(dateState.date))">all Done</button>
-          </div>
-          <ul class="add-list">
-            <li class="no-todo" v-show="todos.todoList.length == 0 ? true : false">
-              <i>今天还没有代办事项哟</i>
-            </li>
-            <li v-for="(item,index) in todos.todoList">
-              <input type="checkbox"
-                     :checked="item.done_state == 0 ? false : true"
-                     @click="todos.changeState(item, index)"/>
-              <label>{{item.title}}</label>
-              <button @click="todos.del(item, index)"></button>
-            </li>
-          </ul>
-        </div>
+    <div class="todo-box">
+      <div class="add-todo">
+        <select @change="state.todo.type">
+          <option value="once">once</option>
+          <option value="everyday">everyday</option>
+        </select>
+        <input placeholder="add Todo" v-model="state.todo.title" @keyup.enter="todos.add(state.todo)"/>
+        <button @click="todos.add(state.todo)">+</button>
+      </div>
+      <div class="todo-handle" v-show="todos.undone == 0 ? false : true">
+        <i>{{todos.undone}} item undone</i>
+        <button @click="todos.allDone(dateFormat(dateState.date))">all Done</button>
+      </div>
+      <ul class="add-list">
+        <li class="no-todo" v-show="todos.todoList.length == 0 ? true : false">
+          <i>今天还没有代办事项哟</i>
+        </li>
+        <li v-for="(item,index) in todos.todoList">
+          <input type="checkbox"
+                 :checked="item.done_state == 0 ? false : true"
+                 @click="todos.changeState(item, index)"/>
+          <label>{{item.title}}</label>
+          <button @click="todos.del(item, index)"></button>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -46,7 +49,7 @@
     month: computed(() => dateState.date.getMonth()),
     day: computed(() => dateState.date.getDate()),
     monthFirstDay: computed(() => new Date(dateState.year, dateState.month, 1)),
-    monthEndDay: computed(() => new Date(dateState.year, dateState.month, 0))
+    monthEndDay: computed(() => new Date(dateState.year, dateState.month + 1, 0))
   })
 
   const todos = reactive({
@@ -72,7 +75,7 @@
     },
     set: todo => {
     },
-    del: (todo,index) => {
+    del: (todo, index) => {
       const data = {
         id: todo.id,
         everydayId: todo.everydayId
@@ -127,19 +130,67 @@
           type: 'once',
           date: {
             year: dateState.year,
-            month: dateState.month +1,
+            month: dateState.month + 1,
             day: dateState.day
           }
         }
       })
+
+      // 点击日期时间
+      const selectDateHandle = (date, data) => {
+        const [year, month, day] = date.split("-")
+        console.log(year, month, day)
+        // 重新赋值才能触发 watchEffect 监听，setDate函数不能触发
+        const newDate = new Date(year, month - 1, day)
+        dateState.date = newDate
+      }
+
+      // 上下月
+      const monthHandle = (date) => {
+        const year = date.getFullYear(),
+          month = date.getMonth(),
+          day = date.getDate()
+        const startStamp = date.getTime(),
+          endStamp = new Date(year, month+1, 0)
+        setCalendarData(year, startStamp, endStamp)
+      }
+
+      // 生成日历数据
+      const setCalendarData = (year, startStamp, endStamp) => {
+        todoDateSort(year).then(res => {
+          const dayTime = 3600 * 24 * 1000,
+            data = reactive({
+              dateData: []
+            }),
+            dateHandle = new Date()
+          for (let time = startStamp; time <= endStamp; time += dayTime) {
+            dateHandle.setTime(time)
+            // 需要 yyyy-MM-dd 格式时间
+            let date = formatDate(dateHandle)
+            let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 6000) : 0
+            data.dateData.push([date, value]);
+          }
+          todos.dateSort = data.dateData
+        })
+      }
+
       onMounted(() => {
-        getTodoList({year: dateState.year, month: dateState.month + 1, day: dateState.day})
-          .then(res => todos.todoList = res.data)
-        todoDateSort(dateState.year).then(res => todos.dateSort = res.data)
-        // console.log(todoDateSort(2021))
+        // watchEffect 函数会初始化执行一遍回调函数
+        watchEffect(() => {
+          getTodoList({year: dateState.year, month: dateState.month + 1, day: dateState.day})
+            .then(res => todos.todoList = res.data)
+        })
+
+        // vue3的watch函数监听
+        // 响应式对象： () => state.test ，初始化时会执行一遍回调函数
+        // 普通类型： test
+        watch(() => todos.undone, (newVal, oldVal) => {
+          (!!!newVal && !!oldVal || !!newVal && !!!oldVal)
+          && setCalendarData(dateState.year, dateState.monthFirstDay.getTime(), dateState.monthEndDay.getTime())
+        })
       })
       return {
-        dateState, formatDate, dateFormat, todos, state
+        dateState, todos, state, formatDate, dateFormat, selectDateHandle, monthHandle
       }
     }
   }
@@ -181,7 +232,7 @@
     justify-content: flex-start;
 
     .date-picker {
-      width: 40%;
+      width: 30%;
       overflow-y: scroll;
     }
 

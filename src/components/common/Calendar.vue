@@ -1,5 +1,4 @@
 <template>
-  <div @click="test">==</div>
   <div id="summary" style="width: auto; height: 420px;"></div>
 </template>
 
@@ -44,7 +43,8 @@
           return date
         }
       },
-      handleClick: Object,
+      clickHandle: Function,
+      monthHandle: Function
     },
     setup(props) {
       const echarts = inject("ec")
@@ -74,6 +74,19 @@
             left: 'center',
             top: 70,
             cellSize: 40,
+            itemStyle: {
+              color: '#EDEBF0',
+              borderWidth: 1,
+              borderColor: '#fff'
+            },
+            splitLine: {
+              show: true,
+              lineStyle: {
+                color: '#999',
+                width: 1,
+                type: 'solid'
+              }
+            },
             range: [`${props.startDate.getFullYear()}-${props.startDate.getMonth() + 1}`]
           },
           toolbox: {
@@ -106,11 +119,20 @@
             type: 'heatmap',
             coordinateSystem: 'calendar',
             data: props.data,
-            radius: ['100%', '100%']
+            radius: ['100%', '100%'],
+            label: {
+              show: true,
+              formatter: function (params) {
+                var d = echarts.number.parseDate(params.value[0]);
+                // return d.getDate() + '\n\n' + params.value[2] + '\n\n';
+                return d.getDate()
+              },
+              color: '#000'
+            },
           }
         });
         myChart.on('click', params => {
-          props.handleClick(...params.data)
+          props.clickHandle(...params.data)
         });
         // window.onresize = function () {//自适应大小
         //   myChart.resize();
@@ -138,6 +160,7 @@
           state.startDate = startDate
           state.endDate = endDate
           setDate.setOptions()
+          props.monthHandle(startDate)
         },
         nextMonth: () => {
           startDate.setMonth(startDate.getMonth() + 1)
@@ -145,6 +168,7 @@
           state.startDate = startDate
           state.endDate = endDate
           setDate.setOptions()
+          props.monthHandle(startDate)
         }
       }
 
