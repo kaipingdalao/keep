@@ -1,5 +1,5 @@
 <template>
-  <div id="summary" style="width: auto; height: 420px;"></div>
+  <div id="summary" style="width: auto; height: 100%;"></div>
 </template>
 
 <script>
@@ -14,6 +14,9 @@
           const defaultOptions = {
             dataMin: 0,
             dataMax: 10000,
+            // 网格大小
+            cellSize: 55,
+            // 颜色区间
             inRangeColor: ['#fff', '#000']
           }
           for (let item in defaultOptions) {
@@ -53,6 +56,7 @@
         myChart = echarts.init(document.getElementById("summary"))
         // 绘制图表
         myChart.setOption({
+          // backgroundColor: 'red',
           visualMap: {
             show: false,
             min: props.options.dataMin,
@@ -73,7 +77,7 @@
             },
             left: 'center',
             top: 70,
-            cellSize: 40,
+            cellSize: props.options.cellSize,
             itemStyle: {
               color: '#EDEBF0',
               borderWidth: 1,
@@ -129,7 +133,10 @@
               },
               color: '#000'
             },
-          }
+          },
+          // 过渡动画时间
+          animationDuration: 300,
+          animationEasing: "cubicInOut",
         });
         myChart.on('click', params => {
           props.clickHandle(...params.data)

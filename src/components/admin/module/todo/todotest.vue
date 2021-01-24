@@ -1,11 +1,12 @@
 <template>
   <div id="Log">
+    <button @click="getOriginalObject(state.todo)">++</button>
     <div class="date-picker">
       <calendar :startDate="dateState.monthFirstDay"
                 :endDate="dateState.monthEndDay"
                 :clickHandle="selectDateHandle"
                 :monthHandle="monthHandle"
-                :options="{dataMin:0, dataMax:15000, inRangeColor:['#EDEBF0', '#EEA69D', '#00C46B']}"
+                :options="{dataMin:0, dataMax:15000, inRangeColor:['#fff', '#EDEBF0', '#EEA69D', '#00C46B']}"
                 :data="todos.dateSort"
       ></calendar>
     </div>
@@ -16,7 +17,8 @@
           <option value="everyday">everyday</option>
         </select>
         <input placeholder="add Todo" v-model="state.todo.title" @keyup.enter="todos.add(state.todo)"/>
-        <button @click="todos.add(state.todo)">+</button>
+<!--        <input placeholder="add Todo" v-model="text" @keyup.enter="todos.add(state.todo)"/>-->
+        <button @click="todos.add(state.todo), text=''">+</button>
       </div>
       <div class="todo-handle" v-show="todos.undone == 0 ? false : true">
         <i>{{todos.undone}} item undone</i>
@@ -40,7 +42,7 @@
 
 <script>
   import calendar from '/src/components/common/Calendar.vue'
-  import {reactive, toRefs, computed, onMounted, watchEffect, watch, inject} from 'vue'
+  import {reactive, toRefs, ref, computed, onMounted, watchEffect, watch, inject} from 'vue'
   import http from '/src/lib/http'
 
   const dateState = reactive({
@@ -67,7 +69,6 @@
           todo = {...todo, date: date.getTime(), id: res.data.newTodoId, done_state: false}
           todos.todoList.unshift(todo)
           console.log('成功')
-          console.log(todos.todoList)
         } else {
           console.log('失败')
         }
@@ -123,15 +124,17 @@
       calendar
     },
     setup() {
+      const text = ref('')
+      console.log(text)
       const state = reactive({
         text: '',
         todo: {
           title: '',
           type: 'once',
           date: {
-            year: dateState.year,
-            month: dateState.month + 1,
-            day: dateState.day
+            year: computed(() => dateState.year),
+            month: computed(() => dateState.month + 1),
+            day: computed(() => dateState.day)
           }
         }
       })
@@ -158,18 +161,22 @@
       // 生成日历数据
       const setCalendarData = (year, startStamp, endStamp) => {
         todoDateSort(year).then(res => {
+          console.log(res.data)
           const dayTime = 3600 * 24 * 1000,
             data = reactive({
               dateData: []
             }),
-            dateHandle = new Date()
+            dateHandle = new Date(),
+            nowDate = new Date()
           for (let time = startStamp; time <= endStamp; time += dayTime) {
             dateHandle.setTime(time)
             // 需要 yyyy-MM-dd 格式时间
             let date = formatDate(dateHandle)
-            let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 6000) : 0
+            let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 8000) : 5000
+            if (dateHandle.getTime() > nowDate.getTime()) value = 0
             data.dateData.push([date, value]);
           }
+          console.log(dateState.date)
           todos.dateSort = data.dateData
         })
       }
@@ -182,15 +189,17 @@
         })
 
         // vue3的watch函数监听
-        // 响应式对象： () => state.test ，初始化时会执行一遍回调函数
+        // 响应式对象： () => state.test
         // 普通类型： test
         watch(() => todos.undone, (newVal, oldVal) => {
           (!!!newVal && !!oldVal || !!newVal && !!!oldVal)
           && setCalendarData(dateState.year, dateState.monthFirstDay.getTime(), dateState.monthEndDay.getTime())
         })
+
+        setCalendarData(dateState.year, dateState.monthFirstDay.getTime(), dateState.monthEndDay.getTime())
       })
       return {
-        dateState, todos, state, formatDate, dateFormat, selectDateHandle, monthHandle
+        dateState, todos, state, formatDate, dateFormat, selectDateHandle, monthHandle, text, getOriginalObject
       }
     }
   }
@@ -221,6 +230,44 @@
     return {year, month, day}
   }
 
+  // 获取proxy的原始对象
+  const getOriginalObject = (proxyObj) => {
+    console.log('========================')
+    const originalObjArr = Object.getOwnPropertyDescriptors(proxyObj)
+    console.log(originalObjArr)
+
+    const er = (obj) => {
+      console.log(obj)
+      if (obj['value'] == undefined) return obj
+      console.log(obj, '有value')
+      if (!(obj['value'] instanceof Object)) return obj['value']
+      for (let i in obj['value']) {
+        obj['value'][i] = er(obj['value'][i])
+      }
+      return obj
+    }
+
+    if (originalObjArr.length == 0) return proxyObj
+    for (let item in originalObjArr) {
+      // originalObjArr[item] = originalObjArr[item]['value']
+      // if (originalObjArr[item] instanceof Object) {
+      //   for (let i in originalObjArr[item]) {
+      //     originalObjArr[item][i] = originalObjArr[item][i]['value']
+      //   }
+      // }
+
+      originalObjArr[item] = er(originalObjArr[item])
+
+      // 判断是否是对象 instanceof 判断数组也是对象
+      // originalObjArr[item] = originalObjArr[item] instanceof Object
+      //   ? originalObjArr[item]
+      //   : getOriginalObject(originalObjArr[item])
+
+    }
+    console.log(originalObjArr)
+    return originalObjArr
+  }
+
 
 </script>
 
@@ -232,7 +279,7 @@
     justify-content: flex-start;
 
     .date-picker {
-      width: 30%;
+      width: 50%;
       overflow-y: scroll;
     }
 
@@ -248,6 +295,7 @@
       .add-todo {
         width: 600px;
         margin: 30px auto 20px auto;
+        margin: 30px 0px 20px 0px;
         text-align: center;
         display: flex;
         justify-content: flex-start;
@@ -298,6 +346,7 @@
         width: 600px;
         height: 30px;
         margin: 0px auto 15px auto;
+        margin: 0px 0px 15px 0px;
         font-size: 13px;
         text-align: right;
         /*background-color: red;*/
@@ -345,6 +394,7 @@
           /*line-height: 50px;*/
           height: auto;
           margin: 0px auto 20px auto;
+          margin: 0px 0px 20px 0px;
           display: flex;
           justify-content: flex-start;
           justify-items: center;
