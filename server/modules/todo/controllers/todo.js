@@ -7,11 +7,12 @@ module.exports = {
       getEveryDayTodoList(timestampStart),
       getList(timestampStart, timestampEnd)
     ])
+    console.log(everydayList, todoList)
 
     const addList = []
     for (let everyday of everydayList) {
       let result = todoList.find(item => {
-        return item.everyday_id == everyday.id
+        return item.everydayId == everyday.id
       })
       result == undefined && addList.push({
         title: everyday.title,
@@ -21,7 +22,7 @@ module.exports = {
       })
     }
     // 如果传入日期为当前日期，则添加一条数据，否则只追加到临时
-    const selectDate = new Date(timestampStart * 1000),
+    const selectDate = new Date(timestampStart),
       nowDate = new Date()
     let newId = addList.length > 0
       && selectDate.getFullYear() == nowDate.getFullYear()
@@ -45,7 +46,7 @@ module.exports = {
     return type == 'once' ? await add(title, date) : await addEveryDayTodo(title, date)
   },
   delTodo: async (id, everydayId) => {
-    return everydayId && await delEverydayTodo(everydayId) || id && await del(id)
+    return everydayId && await delEverydayTodo(everydayId),await del(id) || id && await del(id)
   },
   todoDateSort: async (year) => {
     return await todoSort(year)

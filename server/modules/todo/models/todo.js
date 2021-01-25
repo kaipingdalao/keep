@@ -7,7 +7,7 @@ const mysql = () => {
 
 module.exports = {
   getList: async (timestampStart, timestampEnd) => {
-    return await mysql().fields('id', 'title', 'date', 'done_state', 'everyday_id')
+    return await mysql().fields('id', 'title', 'date', 'done_state as doneState', 'everyday_id as everydayId')
       .where(`${timestampStart} <= date`, `date <= ${timestampEnd}`, 'done_state != 2')
       .select()
   },

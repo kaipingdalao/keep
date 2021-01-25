@@ -7,7 +7,7 @@ const mysql = () => {
 
 module.exports = {
   getEveryDayTodoList: async timestampStart => {
-    return mysql().where('end_date=0', `start_date < ${timestampStart}`).select()
+    return mysql().where('end_date=0', `start_date <= ${timestampStart}`).select()
   },
 
   addEveryDayTodo: async (title, date) => {

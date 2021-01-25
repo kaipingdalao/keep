@@ -1,508 +1,244 @@
 <template>
-  <div id="Log">
-    <button @click="getOriginalObject(state.todo)">++</button>
+  <div class="log-show">
+    <!--        <msg></msg>-->
     <div class="date-picker">
-      <calendar :startDate="dateState.monthFirstDay"
-                :endDate="dateState.monthEndDay"
-                :clickHandle="selectDateHandle"
-                :monthHandle="monthHandle"
+<!--      <datePicker-->
+<!--        class="calendar"-->
+<!--        :options="calendarArr"-->
+<!--        :logMarkArr = "logMarkArr"-->
+<!--        @handleClickDay="handleClickDay"-->
+<!--        @handlePrevMonth="handlePrevMonth"-->
+<!--        @handleNextMonth="handleNextMonth"-->
+<!--        @handleBackDay="handleBackDay"-->
+<!--      ></datePicker>-->
+      <calendar :startDate="new Date(1611504000000)"
+                :endDate="new Date(1611590400000)"
+                :clickHandle="handleClickDay"
                 :options="{dataMin:0, dataMax:15000, inRangeColor:['#fff', '#EDEBF0', '#EEA69D', '#00C46B']}"
-                :data="todos.dateSort"
+                :data="logMarkArr"
       ></calendar>
     </div>
-    <div class="todo-box">
-      <div class="add-todo">
-        <select @change="state.todo.type">
-          <option value="once">once</option>
-          <option value="everyday">everyday</option>
-        </select>
-        <input placeholder="add Todo" v-model="state.todo.title" @keyup.enter="todos.add(state.todo)"/>
-<!--        <input placeholder="add Todo" v-model="text" @keyup.enter="todos.add(state.todo)"/>-->
-        <button @click="todos.add(state.todo), text=''">+</button>
+    <div class="content-box">
+      <div class="log-content" :class="{'log-content-open': !isEdit, 'log-content-close': isEdit}">
+        <vue3-markdown-it class="markdown-css" :source="logText" />
       </div>
-      <div class="todo-handle" v-show="todos.undone == 0 ? false : true">
-        <i>{{todos.undone}} item undone</i>
-        <button @click="todos.allDone(dateFormat(dateState.date))">all Done</button>
+      <div class="edit-textarea" :class="{'edit-textarea-open': isEdit, 'edit-textarea-close': !isEdit}">
+        <textarea v-show="isEdit" v-model="logText"></textarea>
       </div>
-      <ul class="add-list">
-        <li class="no-todo" v-show="todos.todoList.length == 0 ? true : false">
-          <i>今天还没有代办事项哟</i>
-        </li>
-        <li v-for="(item,index) in todos.todoList">
-          <input type="checkbox"
-                 :checked="item.done_state == 0 ? false : true"
-                 @click="todos.changeState(item, index)"/>
-          <label>{{item.title}}</label>
-          <button @click="todos.del(item, index)"></button>
-        </li>
-      </ul>
+      <div class="edit-switch">
+        <button @click="upData">{{isEdit ? 'submit' : 'edit'}}</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+  import datePicker from '/src/components/common/vue3-date-picker/date-picker.vue'
   import calendar from '/src/components/common/Calendar.vue'
-  import {reactive, toRefs, ref, computed, onMounted, watchEffect, watch, inject} from 'vue'
+  import {reactive, toRefs, computed, onMounted} from 'vue'
   import http from '/src/lib/http'
-
-  const dateState = reactive({
-    date: new Date(),
-    year: computed(() => dateState.date.getFullYear()),
-    month: computed(() => dateState.date.getMonth()),
-    day: computed(() => dateState.date.getDate()),
-    monthFirstDay: computed(() => new Date(dateState.year, dateState.month, 1)),
-    monthEndDay: computed(() => new Date(dateState.year, dateState.month + 1, 0))
-  })
-
-  const todos = reactive({
-    todoList: [],
-    dateSort: [],
-    add: todo => {
-      http('get', '/todo/addTodo', {
-        title: todo.title,
-        ...todo.date,
-        todoType: todo.type
-      }).then(res => {
-        if (res.code == 200) {
-          console.log(res)
-          const date = new Date(todo.date.year, todo.date.month, todo.date.day)
-          todo = {...todo, date: date.getTime(), id: res.data.newTodoId, done_state: false}
-          todos.todoList.unshift(todo)
-          console.log('成功')
-        } else {
-          console.log('失败')
-        }
-      })
-    },
-    set: todo => {
-    },
-    del: (todo, index) => {
-      const data = {
-        id: todo.id,
-        everydayId: todo.everydayId
-      }
-      http('get', '/todo/delTodo', {...data}).then(res => {
-        if (res.code == 200) {
-          todos.todoList.splice(index, 1)
-          console.log('成功')
-        } else {
-          console.log('失败')
-        }
-      })
-    },
-    changeState: (todo, index) => {
-      http('get', '/todo/setTodoState', {id: todo.id}).then(res => {
-        if (res.code == 200) {
-          console.log('成功')
-          todos.todoList[index].done_state = !todos.todoList[index].done_state
-        } else {
-          console.log('失败')
-        }
-      })
-    },
-    allDone: date => {
-      http('get', '/todo/todoAllDone', {...date}).then(res => {
-        if (res.code == 200) {
-          console.log('成功')
-          for (let item of todos.todoList) {
-            item.done_state = true
-          }
-        } else {
-          console.log('失败')
-        }
-      })
-    },
-    undone: computed(() => {
-      let sum = 0
-      for (let item of todos.todoList) !item.done_state && sum++
-      return sum
-    })
-  })
+  import {dateForTimestamp, timestampForStartEnd} from '/src/lib/custom'
+  import "/src/components/common/css/markdown.less"
+  import 'highlight.js/styles/github-gist.css';
+  import msg from '/src/components/common/Message.vue'
 
   export default {
+    name: "index",
     components: {
-      calendar
+      datePicker, msg, calendar
     },
     setup() {
-      const text = ref('')
-      console.log(text)
       const state = reactive({
-        text: '',
-        todo: {
-          title: '',
-          type: 'once',
-          date: {
-            year: computed(() => dateState.year),
-            month: computed(() => dateState.month + 1),
-            day: computed(() => dateState.day)
-          }
-        }
+        // 日历选项
+        calendarArr: {
+          type: 'combination',
+          headStyle: {
+            todayBtn: 'right',
+            combination: 'center',
+            checkBtn: 'right',
+          },
+          viewStyle: {
+            day: 'right'
+          },
+          afterClick: false,
+          calendarData: []
+        },
+        // 编辑状态
+        isEdit: false,
+        // log内容
+        logText: ''
       })
+      const {calendarArr, isEdit, logText} = toRefs(state)
 
-      // 点击日期时间
-      const selectDateHandle = (date, data) => {
-        const [year, month, day] = date.split("-")
-        console.log(year, month, day)
-        // 重新赋值才能触发 watchEffect 监听，setDate函数不能触发
-        const newDate = new Date(year, month - 1, day)
-        dateState.date = newDate
-      }
 
-      // 上下月
-      const monthHandle = (date) => {
-        const year = date.getFullYear(),
-          month = date.getMonth(),
-          day = date.getDate()
-        const startStamp = date.getTime(),
-          endStamp = new Date(year, month+1, 0)
-        setCalendarData(year, startStamp, endStamp)
-      }
-
-      // 生成日历数据
-      const setCalendarData = (year, startStamp, endStamp) => {
-        todoDateSort(year).then(res => {
-          console.log(res.data)
-          const dayTime = 3600 * 24 * 1000,
-            data = reactive({
-              dateData: []
-            }),
-            dateHandle = new Date(),
-            nowDate = new Date()
-          for (let time = startStamp; time <= endStamp; time += dayTime) {
-            dateHandle.setTime(time)
-            // 需要 yyyy-MM-dd 格式时间
-            let date = formatDate(dateHandle)
-            let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 8000) : 5000
-            if (dateHandle.getTime() > nowDate.getTime()) value = 0
-            data.dateData.push([date, value]);
-          }
-          console.log(dateState.date)
-          todos.dateSort = data.dateData
+      // 获取数据
+      const getLog = (timestampStart, timestampEnd) => {
+        http('get', '/log/getLog', {
+          timestampStart: timestampStart,
+          timestampEnd: timestampEnd
+        }).then(res => {
+          state.logText = res.data.content
         })
       }
+
+      // 加载今天笔记
+      const handleBackDay = () => {
+        // 今天的开始结束时间戳
+        const todayTimestampStart = timestampForStartEnd(Number(new Date().getTime())).timestampStart
+        const todayTimestampEnd = timestampForStartEnd(Number(new Date().getTime())).timestampEnd
+        getLog(todayTimestampStart, todayTimestampEnd)
+      }
+
+      // 提交编辑
+      const upData = () => {
+        state.isEdit = !state.isEdit
+        console.log(state.isEdit)
+      }
+
+      // 点击日期
+      const handleClickDay = (date) => {
+        const {year, month, day} = date
+        const timestampStart = dateForTimestamp(year, month, day)
+        const timestampEnd = dateForTimestamp(year, month, day + 1) - 1
+        getLog(timestampStart, timestampEnd)
+      }
+      // 点击上月
+      const handlePrevMonth = () => {
+      }
+      // 点击下月
+      const handleNextMonth = () => {
+      }
+
+      // 获取有日记的日期
+      // 日历，日期是否存在日记标记
+      // 循环渲染 判断条件 到当年数组判断当月当日日记是否存在
+      // 获取一整年的日记日期数组
+      const logMarkArr = (year) => {
+        let logMarkState = reactive({
+          markArr: {}
+        })
+        http('get', '/log/logDateSort', {year}).then(res => {
+          let data = res.data
+          // 格式化
+          for (let item of data) {
+            let {m, d} = item
+            !(m in logMarkState.markArr) && (logMarkState.markArr[m] = {})
+            logMarkState.markArr[m][d] = true
+          }
+        })
+        return logMarkState.markArr
+      }
+
 
       onMounted(() => {
-        // watchEffect 函数会初始化执行一遍回调函数
-        watchEffect(() => {
-          getTodoList({year: dateState.year, month: dateState.month + 1, day: dateState.day})
-            .then(res => todos.todoList = res.data)
-        })
-
-        // vue3的watch函数监听
-        // 响应式对象： () => state.test
-        // 普通类型： test
-        watch(() => todos.undone, (newVal, oldVal) => {
-          (!!!newVal && !!oldVal || !!newVal && !!!oldVal)
-          && setCalendarData(dateState.year, dateState.monthFirstDay.getTime(), dateState.monthEndDay.getTime())
-        })
-
-        setCalendarData(dateState.year, dateState.monthFirstDay.getTime(), dateState.monthEndDay.getTime())
+        handleBackDay()
       })
+
       return {
-        dateState, todos, state, formatDate, dateFormat, selectDateHandle, monthHandle, text, getOriginalObject
+        calendarArr, isEdit,
+        handleClickDay, handlePrevMonth, handleNextMonth,handleBackDay,
+        upData, logText, logMarkArr
       }
     }
   }
-
-  // 格式化时间， date对象转 yyyy-MM-dd 格式时间
-  const formatDate = date => {
-    const month = date.getMonth() + 1 >= 10 ? date.getMonth() + 1 : `0${date.getMonth() + 1}`
-    const day = date.getDate() >= 10 ? date.getDate() : `0${date.getDate()}`
-    return `${date.getFullYear()}-${month}-${day}`
-    // return date.toLocaleDateString().replace(/\//g, '-')
-  }
-
-  // date: year,month,day
-  const getTodoList = async date => {
-    return await http('get', '/todo/getTodoList', {...date})
-  }
-
-  // 获取日期统计
-  const todoDateSort = async year => {
-    return await http('get', '/todo/todoDateSort', {year})
-  }
-
-  // 时间转换年月日
-  const dateFormat = date => {
-    const year = date.getFullYear(),
-      month = date.getMonth() + 1,
-      day = date.getDate()
-    return {year, month, day}
-  }
-
-  // 获取proxy的原始对象
-  const getOriginalObject = (proxyObj) => {
-    console.log('========================')
-    const originalObjArr = Object.getOwnPropertyDescriptors(proxyObj)
-    console.log(originalObjArr)
-
-    const er = (obj) => {
-      console.log(obj)
-      if (obj['value'] == undefined) return obj
-      console.log(obj, '有value')
-      if (!(obj['value'] instanceof Object)) return obj['value']
-      for (let i in obj['value']) {
-        obj['value'][i] = er(obj['value'][i])
-      }
-      return obj
-    }
-
-    if (originalObjArr.length == 0) return proxyObj
-    for (let item in originalObjArr) {
-      // originalObjArr[item] = originalObjArr[item]['value']
-      // if (originalObjArr[item] instanceof Object) {
-      //   for (let i in originalObjArr[item]) {
-      //     originalObjArr[item][i] = originalObjArr[item][i]['value']
-      //   }
-      // }
-
-      originalObjArr[item] = er(originalObjArr[item])
-
-      // 判断是否是对象 instanceof 判断数组也是对象
-      // originalObjArr[item] = originalObjArr[item] instanceof Object
-      //   ? originalObjArr[item]
-      //   : getOriginalObject(originalObjArr[item])
-
-    }
-    console.log(originalObjArr)
-    return originalObjArr
-  }
-
-
 </script>
 
 <style scoped lang="less">
-  #Log {
+  @edit-textarea-height: 350px;
+  @edit-switch-height: 60px;
+
+  .log-show {
+    /*background-color: red;*/
+    overflow-y: scroll;
     width: inherit;
     height: inherit;
     display: flex;
     justify-content: flex-start;
+  }
 
-    .date-picker {
-      width: 50%;
-      overflow-y: scroll;
-    }
+  .date-picker {
+    width: 40%;
+    overflow-y: scroll;
+  }
 
-    .date-picker::-webkit-scrollbar {
-      display: none;
-    }
+  .date-picker::-webkit-scrollbar {
+    display: none;
+  }
 
-    .todo-box {
-      width: 60%;
-      height: 100%;
-      overflow: auto;
+  .content-box {
+    width: 60%;
 
-      .add-todo {
-        width: 600px;
-        margin: 30px auto 20px auto;
-        margin: 30px 0px 20px 0px;
-        text-align: center;
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        background-color: #fff;
-        border-radius: 17px;
+    .edit-textarea {
+      transition: all 250ms linear 0s;
 
-        select {
-          color: rgb(77, 77, 77);
-          font-size: 15px;
-          width: 100px;
-          height: 30px;
-          border: 0px;
-          text-align: center;
-          text-align-last: center;
-          box-sizing: border-box;
-          -moz-box-sizing: border-box; /* Firefox */
-          -webkit-box-sizing: border-box; /* Safari */
-          padding-left: 15px;
-        }
+      textarea {
+        paddding: 15px;
+        margin: 0px;
+        max-width: 100%;
+        max-height: 100%;
+        min-width: 100%;
+        min-height: 100%;
+        border-radius: 8px;
+        border: 1px #cccccc solid;
 
-        input {
-          width: calc(100% - 120px);
-          height: 60px;
-          /*background-color: red;*/
-          background-color: #fff;
-          font-size: 20px;
-          box-sizing: border-box;
-          -moz-box-sizing: border-box; /* Firefox */
-          -webkit-box-sizing: border-box; /* Safari */
-          padding: 0px 15px 0px 20px;
-          font-weight: 200;
-          font-family: inherit;
-          -webkit-font-smoothing: antialiased;
-        }
-
-        button {
-          font-size: 23px;
-          background-color: #fff;
-          border: none;
-          color: #00a457;
-          width: 45px;
-          padding-right: 15px;
-        }
-      }
-
-      .todo-handle {
-        width: 600px;
-        height: 30px;
-        margin: 0px auto 15px auto;
-        margin: 0px 0px 15px 0px;
         font-size: 13px;
-        text-align: right;
-        /*background-color: red;*/
-
-        i {
-          display: inline-block;
-          padding: 0px 20px;
-          color: #FF6A6A;
-        }
-
-        button {
-          display: inline-block;
-          background-color: #EEDC82;
-          background-color: #FAE788;
-          border: none;
-          color: rgb(77, 77, 77);
-          padding: 8px 14px;
-          margin: 0px 10px 0px 0px;
-          border-radius: 25px;
-          transition: all 200ms linear 0s;
-        }
-
-        button:hover {
-          background-color: #F3D640;
-        }
+        box-sizing:border-box;
+        padding: 15px;
       }
+    }
 
-      .add-list::-webkit-scrollbar {
-        display: none;
-      }
+    .edit-textarea-open {
+      height: calc(@edit-textarea-height - @edit-switch-height);
+    }
 
-      .add-list {
-        /*width: 600px;*/
-        height: calc(100% - 180px);
-        overflow: auto;
-        /*overflow-x: hidden;*/
-        /*margin: 0px auto;*/
-        /*background-color: red;*/
+    .edit-textarea-close {
+      height: 0px;
+    }
 
-        li {
-          width: 600px;
-          /*background-color: red;*/
-          z-index: 1;
-          /*height: 50px;*/
-          /*line-height: 50px;*/
-          height: auto;
-          margin: 0px auto 20px auto;
-          margin: 0px 0px 20px 0px;
-          display: flex;
-          justify-content: flex-start;
-          justify-items: center;
-          position: relative;
-          border-bottom: 1px solid #ededed;
-          border-radius: 17px;
-          /*阴影*/
-          -moz-box-shadow: 1px 1px 5px #aaa;
-          -webkit-box-shadow: 1px 1px 5px #aaa;
-          box-shadow: 1px 1px 5px #DEDEDE;
+    .log-content {
+      width: 100%;
+      /*background-color: green;*/
+      overflow-y: scroll;
+      transition: all 250ms linear 0s;
+    }
 
-          input {
-            text-align: center;
-            width: 40px;
-            height: 100%;
-            opacity: 0;
-            position: absolute;
-            z-index: 99;
-            margin: auto 0;
-            border: none; /* Mobile Safari */
-            -webkit-appearance: none;
-            appearance: none;
-          }
+    .log-content-open {
+      margin-bottom: 0px;
+      height: calc(100% - 60px);
+    }
 
-          label {
-            border-radius: 17px;
-            /*文字溢出换行*/
-            white-space: normal;
-            word-break: break-all;
-            word-wrap: break-word;
-            line-height: 100%;
-            line-height: 25px;
-            font-size: 17px;
-            background-color: #fff;
-            display: flex;
-            width: 100%;
-            /*实现垂直居中*/
-            align-items: center;
-            padding: 20px 60px 20px 65px;
-            color: #4d4d4d;
-            transition: all 200ms linear 0s;
-          }
+    .log-content-close {
+      margin-bottom: 20px;
+      height: calc(100% - @edit-textarea-height - 20px);
+    }
 
-          input + label {
-            z-index: 10;
-            background-image: url('/public/static/img/icon/todo_undone.svg');
-            background-repeat: no-repeat;
-            background-position: center left;
-          }
+    .edit-switch {
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      height: @edit-switch-height;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      /*background-color: red;*/
 
-          input:checked + label {
-            z-index: 10;
-            color: #B0B0B0;
-            text-decoration: line-through;
-            background-image: url('/public/static/img/icon/todo_done.svg');
-          }
+      button {
+        height: 30px;
+        margin: 0px 60px;
+        padding: 0px 10px;
 
-          button {
-            display: none;
-            position: absolute;
-            top: 0;
-            right: 10px;
-            bottom: 0;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
-            margin: auto 0;
-            font-size: 30px;
-            color: #cc9a9a;
-            /*margin-bottom: 11px;*/
-            transition: color 0.2s ease-out;
-            z-index: 99;
-            border: 0px;
-            background-color: #fff;
-          }
-
-          button:hover {
-            color: #af5b5e;
-          }
-
-          button:after {
-            content: '×';
-          }
-        }
-
-        li:hover button {
-          display: block;
-        }
-
-        .no-todo {
-          height: 50px;
-          line-height: 50px;
-          /*阴影*/
-          -moz-box-shadow: none;
-          -webkit-box-shadow: none;
-          box-shadow: none;
-
-          i {
-            display: block;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            font-size: 15px;
-            color: #4d4d4d;
-          }
-        }
+        text-align: center;
+        border: 1px solid #2061FF;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #2061FF;
+        cursor: pointer;
       }
     }
   }
 
+  /*.content-box::-webkit-scrollbar {*/
+  /*    width: 16px; !*滚动条宽度*!*/
+  /*    !*height: 16px;  !*滚动条高度*!*!*/
+  /*}*/
 </style>
