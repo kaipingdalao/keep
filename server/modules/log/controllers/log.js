@@ -1,12 +1,18 @@
-const {getLog, logSort} = require('../models/log')
+const {getLog, addLog, editLog, logSort} = require('../models/log')
 
 module.exports = {
 
-    log: async (timestampStart, timestampEnd) => {
-        return await getLog(timestampStart, timestampEnd)
-    },
+  log: async (date) => {
+    return await getLog(date)
+  },
 
-    logDateSort: async (year) => {
-        return await logSort(year)
-    }
+  edit: async (content, date) => {
+    const log = await getLog(date)
+    console.log(log)
+    return !!!log ? await addLog(content) : await editLog(log[0].id,content, date)
+  },
+
+  logDateSort: async (year) => {
+    return await logSort(year)
+  }
 }

@@ -93,7 +93,7 @@ class mysqlCustom {
         if (this.whereList.length == 0) throw new Error('where is null')
         const dataArr = []
         this.fieldList.forEach((value, index) => {
-          dataArr.push(`${value} = ${this.valueList[index]}`)
+          dataArr.push(`${value} = '${this.valueList[index]}'`)
         })
         return `UPDATE  ${this.tableName} SET ${dataArr.join(',')} ${wheres}`
       case 'delete':
@@ -121,6 +121,7 @@ class mysqlCustom {
       wheres = this.whereList.length > 0 ? ` WHERE ${this.whereList.join(' AND ')}` : '',
       order = this.orderBy ? this.orderBy : '',
       sql = `SELECT ${fields} FROM ${this.tableName} ${wheres} ${order}`
+    console.log(sql)
     return new Promise((resolve, reject) => {
       pool.getConnection((err, connection) => {
         err ? reject(err)

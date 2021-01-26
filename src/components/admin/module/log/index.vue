@@ -35,6 +35,33 @@
     import 'highlight.js/styles/github-gist.css';
     import msg from '/src/components/common/Message.vue'
 
+    const dateState = reactive({
+      date: new Date(),
+      year: computed(() => dateState.date.getFullYear()),
+      month: computed(() => dateState.date.getMonth()),
+      day: computed(() => dateState.date.getDate()),
+      monthFirstDay: computed(() => new Date(dateState.year, dateState.month, 1)),
+      monthEndDay: computed(() => new Date(dateState.year, dateState.month + 1, 0))
+    })
+
+    const log = reactive({
+      logData: {
+        id: null,
+        content: '',
+        date: null
+      },
+      logSort: [],
+      edit: () => {
+        http('post', '/log/addLog', {
+          content: log.logData.content,
+          date: log.logData.date
+        }).then(res => {
+          console.log(res)
+        })
+      }
+    })
+
+
     export default {
         name: "index",
         components: {

@@ -7,15 +7,19 @@ const logController = require('../controllers/log')
 // })
 // 当前页面可写中间件
 router.get('/getLog', async ctx => {
-    const timestampStart = Number(ctx.request.query.timestampStart),
-        timestampEnd = Number(ctx.request.query.timestampEnd)
-    if (!timestampStart || !timestampEnd) throw new Error('参数错误')
-    let data = await logController.log(timestampStart, timestampEnd)
+    const date = (ctx.request.query.date && Number(ctx.request.query.date)) || new Date().getTime()
+    let data = await logController.log(date)
     data = data.length !== 0 ? data[0] : {
         id: '',
         content: `### 今天是一条咸鱼`,
         dateTime: ''
     }
+    ctx.send(200, data)
+})
+
+router.post('/editLog', async ctx => {
+    const {content, date} = ctx.request.body
+    const data = await logController.edit(content,date)
     ctx.send(200, data)
 })
 
