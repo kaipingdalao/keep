@@ -2,15 +2,19 @@
   <div class="log-show">
     <!--        <msg></msg>-->
     <div class="date-picker">
-      <datePicker
-        class="calendar"
-        :options="calendarArr"
-        :logMarkArr = "logMarkArr"
-        @handleClickDay="handleClickDay"
-        @handlePrevMonth="handlePrevMonth"
-        @handleNextMonth="handleNextMonth"
-        @handleBackDay="handleBackDay"
-      ></datePicker>
+<!--      <datePicker-->
+<!--        class="calendar"-->
+<!--        :options="calendarArr"-->
+<!--        :logMarkArr = "logMarkArr"-->
+<!--        @handleClickDay="handleClickDay"-->
+<!--        @handlePrevMonth="handlePrevMonth"-->
+<!--        @handleNextMonth="handleNextMonth"-->
+<!--        @handleBackDay="handleBackDay"-->
+<!--      ></datePicker>-->
+      <calendar :startDate="dateState.monthFirstDay"
+                :endDate="dateState.monthEndDay"
+                :options="{dataMin:0, dataMax:15000, inRangeColor:['#fff', '#EDEBF0', '#EEA69D', '#00C46B']}"
+      ></calendar>
     </div>
     <div class="content-box">
       <div class="log-content" :class="{'log-content-open': !isEdit, 'log-content-close': isEdit}">
@@ -28,6 +32,7 @@
 
 <script>
   import datePicker from '/src/components/common/vue3-date-picker/date-picker.vue'
+  import calendar from '/src/components/common/Calendar.vue'
   import {reactive, toRefs, computed, onMounted} from 'vue'
   import http from '/src/lib/http'
   import {dateForTimestamp, timestampForStartEnd} from '/src/lib/custom'
@@ -65,7 +70,7 @@
   export default {
     name: "index",
     components: {
-      datePicker, msg
+      datePicker, msg, calendar
     },
     setup() {
       const state = reactive({
@@ -161,7 +166,9 @@
       return {
         calendarArr, isEdit,
         handleClickDay, handlePrevMonth, handleNextMonth,handleBackDay,
-        upData, logText, logMarkArr
+        upData, logText, logMarkArr,
+
+        dateState, log
       }
     }
   }
