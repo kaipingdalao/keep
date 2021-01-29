@@ -1,16 +1,6 @@
 <template>
   <div class="log-show">
-    <!--        <msg></msg>-->
     <div class="date-picker">
-<!--      <datePicker-->
-<!--        class="calendar"-->
-<!--        :options="calendarArr"-->
-<!--        :logMarkArr = "logMarkArr"-->
-<!--        @handleClickDay="handleClickDay"-->
-<!--        @handlePrevMonth="handlePrevMonth"-->
-<!--        @handleNextMonth="handleNextMonth"-->
-<!--        @handleBackDay="handleBackDay"-->
-<!--      ></datePicker>-->
       <calendar :startDate="dateState.monthFirstDay"
                 :endDate="dateState.monthEndDay"
                 :options="{dataMin:0, dataMax:15000, inRangeColor:['#fff', '#EDEBF0', '#EEA69D', '#00C46B']}"
@@ -33,7 +23,7 @@
 <script>
   import datePicker from '/src/components/common/vue3-date-picker/date-picker.vue'
   import calendar from '/src/components/common/Calendar.vue'
-  import {reactive, toRefs, computed, onMounted} from 'vue'
+  import {reactive, toRefs, computed, onMounted, watch, watchEffect} from 'vue'
   import http from '/src/lib/http'
   import {dateForTimestamp, timestampForStartEnd} from '/src/lib/custom'
   import "/src/components/common/css/markdown.less"
