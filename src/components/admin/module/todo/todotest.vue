@@ -47,7 +47,7 @@
     },
     logSort: [],
     edit: () => {
-      http('post', '/log/addLog', {
+      http('post', '/log/edit', {
         content: log.logData.content,
         date: log.logData.date
       }).then(res => {
