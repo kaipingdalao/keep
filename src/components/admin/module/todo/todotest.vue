@@ -132,11 +132,12 @@
       // 日历，日期是否存在日记标记
       // 循环渲染 判断条件 到当年数组判断当月当日日记是否存在
       // 获取一整年的日记日期数组
-      const logMarkArr = (year) => {
+      const logMarkArr = (year = 2021) => {
         let logMarkState = reactive({
           markArr: {}
         })
         http('get', '/log/logDateSort', {year}).then(res => {
+          console.log(res)
           let data = res.data
           // 格式化
           for (let item of data) {
@@ -144,6 +145,7 @@
             !(m in logMarkState.markArr) && (logMarkState.markArr[m] = {})
             logMarkState.markArr[m][d] = true
           }
+          console.log(logMarkState.markArr)
         })
         return logMarkState.markArr
       }
@@ -151,6 +153,7 @@
 
       onMounted(() => {
         handleBackDay()
+        logMarkArr()
       })
 
       return {

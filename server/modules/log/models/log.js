@@ -33,10 +33,10 @@ module.exports = {
     // let sql = `SELECT id,date_time,FROM_UNIXTIME(date_time,"%Y") AS y,FROM_UNIXTIME(date_time,"%c") AS m,FROM_UNIXTIME(date_time,"%e") AS d FROM day_log WHERE FROM_UNIXTIME(date_time,"%Y")=$ { YEAR } ORDER BY date_time`
     return await mysql().fields('id',
       'date',
-      'FROM_UNIXTIME( date, "%Y" ) AS y',
-      'FROM_UNIXTIME( date, "%c" ) AS m',
-      'FROM_UNIXTIME( date, "%e" ) AS d')
-      .where(`FROM_UNIXTIME( date, "%Y" ) = ${year}`)
+      'FROM_UNIXTIME( date/1000, "%Y" ) AS y',
+      'FROM_UNIXTIME( date/1000, "%c" ) AS m',
+      'FROM_UNIXTIME( date/1000, "%e" ) AS d')
+      .where(`FROM_UNIXTIME( date/1000, "%Y" ) = ${year}`)
       .order('date')
       .select()
   }
