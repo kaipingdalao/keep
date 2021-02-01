@@ -64,37 +64,14 @@
     },
     setup() {
       const state = reactive({
-        // 日历选项
-        calendarArr: {
-          type: 'combination',
-          headStyle: {
-            todayBtn: 'right',
-            combination: 'center',
-            checkBtn: 'right',
-          },
-          viewStyle: {
-            day: 'right'
-          },
-          afterClick: false,
-          calendarData: []
-        },
         // 编辑状态
         isEdit: false,
         // log内容
         logText: ''
       })
-      const {calendarArr, isEdit, logText} = toRefs(state)
+      const {isEdit, logText} = toRefs(state)
 
 
-      // 获取数据
-      const getLog = (timestampStart, timestampEnd) => {
-        http('get', '/log/getLog', {
-          timestampStart: timestampStart,
-          timestampEnd: timestampEnd
-        }).then(res => {
-          state.logText = res.data.content
-        })
-      }
 
       // 加载今天笔记
       const handleBackDay = () => {
@@ -128,42 +105,50 @@
       const handleNextMonth = () => {
       }
 
-      // 获取有日记的日期
-      // 日历，日期是否存在日记标记
-      // 循环渲染 判断条件 到当年数组判断当月当日日记是否存在
-      // 获取一整年的日记日期数组
-      const logMarkArr = (year = 2021) => {
-        let logMarkState = reactive({
-          markArr: {}
-        })
-        http('get', '/log/logDateSort', {year}).then(res => {
-          console.log(res)
-          let data = res.data
-          // 格式化
-          for (let item of data) {
-            let {m, d} = item
-            !(m in logMarkState.markArr) && (logMarkState.markArr[m] = {})
-            logMarkState.markArr[m][d] = true
-          }
-          console.log(logMarkState.markArr)
-        })
-        return logMarkState.markArr
-      }
-
-
       onMounted(() => {
         handleBackDay()
-        logMarkArr()
       })
 
       return {
-        calendarArr, isEdit,
+        isEdit,
         handleClickDay, handlePrevMonth, handleNextMonth,handleBackDay,
-        upData, logText, logMarkArr,
+        upData, logText,
 
         dateState, log
       }
     }
+  }
+
+  // 生成日历数据
+  const setCalendarData = (year, startStamp, endStamp) => {
+    todoDateSort(year).then(res => {
+      const dayTime = 3600 * 24 * 1000,
+        data = reactive({
+          dateData: []
+        }),
+        dateHandle = new Date(),
+        nowDate = new Date()
+      for (let time = startStamp; time <= endStamp; time += dayTime) {
+        dateHandle.setTime(time)
+        // 需要 yyyy-MM-dd 格式时间
+        let date = formatDate(dateHandle)
+        let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 8000) : 5000
+        if (dateHandle.getTime() > nowDate.getTime()) value = 0
+        data.dateData.push([date, value]);
+      }
+      console.log(data.dateData)
+      todos.dateSort = data.dateData
+    })
+  }
+
+  // 获取数据
+  const getLog = (timestampStart, timestampEnd) => {
+    http('get', '/log/getLog', {
+      timestampStart: timestampStart,
+      timestampEnd: timestampEnd
+    }).then(res => {
+      console.log(res)
+    })
   }
 </script>
 

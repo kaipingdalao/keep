@@ -12,7 +12,7 @@ module.exports = {
     return !!!log ? await addLog(content) : await editLog(log[0].id,content, date)
   },
 
-  logDateSort: async (year) => {
-    return await logSort(year)
+  logDateSort: async (year,month) => {
+    return await logSort(year, month)
   }
 }

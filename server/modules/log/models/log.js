@@ -29,7 +29,7 @@ module.exports = {
       .where(`id=${id}`)
       .execute()
   },
-  logSort: async (year) => {
+  logSort: async (year, month) => {
     // let sql = `SELECT id,date_time,FROM_UNIXTIME(date_time,"%Y") AS y,FROM_UNIXTIME(date_time,"%c") AS m,FROM_UNIXTIME(date_time,"%e") AS d FROM day_log WHERE FROM_UNIXTIME(date_time,"%Y")=$ { YEAR } ORDER BY date_time`
     return await mysql().fields('id',
       'date',
@@ -37,6 +37,7 @@ module.exports = {
       'FROM_UNIXTIME( date/1000, "%c" ) AS m',
       'FROM_UNIXTIME( date/1000, "%e" ) AS d')
       .where(`FROM_UNIXTIME( date/1000, "%Y" ) = ${year}`)
+      .where(`FROM_UNIXTIME( date/1000, "%m" ) = ${month}`)
       .order('date')
       .select()
   }

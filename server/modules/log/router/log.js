@@ -26,7 +26,8 @@ router.post('/editLog', async ctx => {
 // 根据年获取日记日期
 router.get('/logDateSort', async ctx => {
     const year = Number(ctx.request.query.year)
-    let data = await logController.logDateSort(year)
+    const month = Number(ctx.request.query.month)
+    let data = await logController.logDateSort(year, month)
     ctx.send(200, data)
 })
 

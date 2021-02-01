@@ -178,6 +178,7 @@
             if (dateHandle.getTime() > nowDate.getTime()) value = 0
             data.dateData.push([date, value]);
           }
+          console.log(data.dateData)
           todos.dateSort = data.dateData
         })
       }
