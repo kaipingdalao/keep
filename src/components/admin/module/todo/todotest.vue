@@ -8,10 +8,10 @@
     </div>
     <div class="content-box">
       <div class="log-content" :class="{'log-content-open': !isEdit, 'log-content-close': isEdit}">
-        <vue3-markdown-it class="markdown-css" :source="logText" />
+        <vue3-markdown-it class="markdown-css" :source="log.logData.content" />
       </div>
       <div class="edit-textarea" :class="{'edit-textarea-open': isEdit, 'edit-textarea-close': !isEdit}">
-        <textarea v-show="isEdit" v-model="logText"></textarea>
+        <textarea v-show="isEdit" v-model="log.logData.content"></textarea>
       </div>
       <div class="edit-switch">
         <button @click="upData">{{isEdit ? 'submit' : 'edit'}}</button>
@@ -78,17 +78,21 @@
         // 今天的开始结束时间戳
         const todayTimestampStart = timestampForStartEnd(Number(new Date().getTime())).timestampStart
         const todayTimestampEnd = timestampForStartEnd(Number(new Date().getTime())).timestampEnd
-        getLog(todayTimestampStart, todayTimestampEnd)
+        getLog(todayTimestampStart, todayTimestampEnd).then(res => {
+          console.log(res)
+          if (!res.data.id) log.logData.id = res.data.id
+          log.logData.content = res.data.content
+        })
       }
 
       // 提交编辑
       const upData = () => {
         state.isEdit = !state.isEdit
         const date = new Date().getTime()
-        http('post', '/log/editLog', {content:state.logText,date})
-        .then(res => {
-          console.log(res)
-        })
+        // http('post', '/log/editLog', {content:state.logText,date})
+        // .then(res => {
+        //   console.log(res)
+        // })
       }
 
       // 点击日期
@@ -142,12 +146,10 @@
   }
 
   // 获取数据
-  const getLog = (timestampStart, timestampEnd) => {
-    http('get', '/log/getLog', {
+  const getLog = async (timestampStart, timestampEnd) => {
+    return await http('get', '/log/getLog', {
       timestampStart: timestampStart,
       timestampEnd: timestampEnd
-    }).then(res => {
-      console.log(res)
     })
   }
 </script>
