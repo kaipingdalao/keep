@@ -1,14 +1,17 @@
 <template>
   <div class="log-show">
     <div class="date-picker">
+      <p>{{dateState.date}}</p>
       <calendar :startDate="dateState.monthFirstDay"
                 :endDate="dateState.monthEndDay"
-                :options="{dataMin:0, dataMax:15000, inRangeColor:['#fff', '#EDEBF0', '#EEA69D', '#00C46B']}"
+                :clickHandle="handleClickDay"
+                :options="{dataMin:0, dataMax:15000, inRangeColor:['#fff', '#EDEBF0', '#00C46B']}"
+                :data="log.logSort"
       ></calendar>
     </div>
     <div class="content-box">
       <div class="log-content" :class="{'log-content-open': !isEdit, 'log-content-close': isEdit}">
-        <vue3-markdown-it class="markdown-css" :source="log.logData.content" />
+        <vue3-markdown-it class="markdown-css" :source="log.logData.content"/>
       </div>
       <div class="edit-textarea" :class="{'edit-textarea-open': isEdit, 'edit-textarea-close': !isEdit}">
         <textarea v-show="isEdit" v-model="log.logData.content"></textarea>
@@ -72,12 +75,13 @@
       const {isEdit, logText} = toRefs(state)
 
 
-
       // 加载今天笔记
       const handleBackDay = () => {
         // 今天的开始结束时间戳
-        const todayTimestampStart = timestampForStartEnd(Number(new Date().getTime())).timestampStart
-        const todayTimestampEnd = timestampForStartEnd(Number(new Date().getTime())).timestampEnd
+        // const todayTimestampStart = timestampForStartEnd(Number(new Date().getTime())).timestampStart
+        // const todayTimestampEnd = timestampForStartEnd(Number(new Date().getTime())).timestampEnd
+        const todayTimestampStart = timestampForStartEnd(Number(dateState.date.getTime())).timestampStart
+        const todayTimestampEnd = timestampForStartEnd(Number(dateState.date.getTime())).timestampEnd
         getLog(todayTimestampStart, todayTimestampEnd).then(res => {
           console.log(res)
           if (!res.data.id) log.logData.id = res.data.id
@@ -95,12 +99,38 @@
         // })
       }
 
+
+      // 生成日历数据
+      const setCalendarData = () => {
+        const date = new Date()
+        date.setFullYear(dateState.year)
+        date.setMonth(dateState.month + 1)
+        date.setDate(0)
+        const dateSum = date.getDate()
+        const data = reactive({
+          dateArr: []
+        })
+        const {dateArr} = toRefs(data)
+        getLogSort(dateState.year, dateState.month + 1).then(res => {
+          for (let i = 1; i <= dateSum; i++) {
+            let y = dateState.year,
+              m = dateState.month+1
+            let dateStr = `${y}-${m < 10 ? '0' + m : m}-${i < 10 ? '0' + i : i}`
+            data.dateArr.push([
+              dateStr,
+              res.data[dateStr] == 1 ? 10000 : 5000
+            ])
+          }
+        })
+        log.logSort = dateArr
+      }
+
       // 点击日期
-      const handleClickDay = (date) => {
-        const {year, month, day} = date
-        const timestampStart = dateForTimestamp(year, month, day)
-        const timestampEnd = dateForTimestamp(year, month, day + 1) - 1
-        getLog(timestampStart, timestampEnd)
+      const handleClickDay = (date, data) => {
+        const [year, month, day] = date.split("-")
+        // 重新赋值才能触发 watchEffect 监听，setDate函数不能触发
+        const newDate = new Date(year, month - 1, day)
+        dateState.date = newDate
       }
       // 点击上月
       const handlePrevMonth = () => {
@@ -111,11 +141,17 @@
 
       onMounted(() => {
         handleBackDay()
+        setCalendarData()
+
+        watch(() => dateState.date, (newVal, oldVal) => {
+          handleBackDay()
+          setCalendarData()
+        })
       })
 
       return {
         isEdit,
-        handleClickDay, handlePrevMonth, handleNextMonth,handleBackDay,
+        handleClickDay, handlePrevMonth, handleNextMonth, handleBackDay,
         upData, logText,
 
         dateState, log
@@ -123,33 +159,19 @@
     }
   }
 
-  // 生成日历数据
-  const setCalendarData = (year, startStamp, endStamp) => {
-    todoDateSort(year).then(res => {
-      const dayTime = 3600 * 24 * 1000,
-        data = reactive({
-          dateData: []
-        }),
-        dateHandle = new Date(),
-        nowDate = new Date()
-      for (let time = startStamp; time <= endStamp; time += dayTime) {
-        dateHandle.setTime(time)
-        // 需要 yyyy-MM-dd 格式时间
-        let date = formatDate(dateHandle)
-        let value = res.data[date] !== undefined ? (res.data[date] == 1 ? 15000 : 8000) : 5000
-        if (dateHandle.getTime() > nowDate.getTime()) value = 0
-        data.dateData.push([date, value]);
-      }
-      console.log(data.dateData)
-      todos.dateSort = data.dateData
-    })
-  }
-
   // 获取数据
   const getLog = async (timestampStart, timestampEnd) => {
     return await http('get', '/log/getLog', {
       timestampStart: timestampStart,
       timestampEnd: timestampEnd
+    })
+  }
+
+  // 获取统计数据
+  const getLogSort = async () => {
+    return await http('get', '/log/logDateSort', {
+      year: 2021,
+      month: 2
     })
   }
 </script>
@@ -193,7 +215,7 @@
         border: 1px #cccccc solid;
 
         font-size: 13px;
-        box-sizing:border-box;
+        box-sizing: border-box;
         padding: 15px;
       }
     }

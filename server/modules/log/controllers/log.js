@@ -13,6 +13,18 @@ module.exports = {
   },
 
   logDateSort: async (year,month) => {
-    return await logSort(year, month)
+    // return await logSort(year, month)
+    const res = await logSort(year, month)
+    const data = {}
+    const date = new Date()
+    for (let i of res) {
+      date.setTime(i.date)
+      const y = date.getFullYear(),
+        m = date.getMonth() + 1,
+        d = date.getDate()
+      data[`${y}-${m < 10 ? '0'+m : m}-${d < 10 ? '0'+d : d}`] = 1
+    }
+
+    return data
   }
 }
